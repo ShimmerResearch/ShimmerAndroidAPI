@@ -11,6 +11,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -84,6 +85,7 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
         this.mHandler = handler;
         if(mHandler==null){ throw new Exception("Handler is NULL"); }
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if(mBluetoothAdapter==null) { throw new Exception("Bluetooth not Supported"); }
         if(checkBtEnabled(mBluetoothAdapter)==false) { throw new Exception("Bluetooth not Enabled"); }
         loadBtShimmers();
     }
@@ -254,7 +256,7 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
 
     private BluetoothLeScanner bluetoothLeScanner;
     private boolean scanning;
-    private Handler handler = new Handler();
+    private Handler handler = new Handler(Looper.getMainLooper());
     // Stops scanning after 10 seconds.
     private static final long SCAN_PERIOD = 10000;
     List<BluetoothDevice> listScanBleDevice = new ArrayList<BluetoothDevice>();
@@ -269,7 +271,11 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
                 @Override
                 public void run() {
                     scanning = false;
-                    bluetoothLeScanner.stopScan(leScanCallback);
+                    try {
+                        bluetoothLeScanner.stopScan(leScanCallback);
+                    } catch (SecurityException e) {
+                        Log.e(TAG, "Missing BLUETOOTH_SCAN permission", e);
+                    }
                 }
             }, SCAN_PERIOD);
 
@@ -279,18 +285,30 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
 
         } else {
             scanning = false;
-            bluetoothLeScanner.stopScan(leScanCallback);
+            try {
+                bluetoothLeScanner.stopScan(leScanCallback);
+            } catch (SecurityException e) {
+                Log.e(TAG, "Missing BLUETOOTH_SCAN permission", e);
+            }
         }
     }
     private void scanForAllBleDevices() {
-        bluetoothLeScanner.startScan(leScanCallback);
+        try {
+            bluetoothLeScanner.startScan(leScanCallback);
+        } catch (SecurityException e) {
+            Log.e(TAG, "Missing BLUETOOTH_SCAN permission", e);
+        }
     }
     private void scanForSpecificBleDevices(String deviceMacAddress) {
         List<ScanFilter> scanFilters = new ArrayList<>();
         ScanFilter filter = new ScanFilter.Builder().setDeviceAddress(deviceMacAddress).build();
         scanFilters.add(filter);
         ScanSettings scanSettings = new ScanSettings.Builder().build();
-        bluetoothLeScanner.startScan(scanFilters, scanSettings, leScanCallback);
+        try {
+            bluetoothLeScanner.startScan(scanFilters, scanSettings, leScanCallback);
+        } catch (SecurityException e) {
+            Log.e(TAG, "Missing BLUETOOTH_SCAN permission", e);
+        }
     }
 
         // Device scan callback.
@@ -320,11 +338,15 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
      * @return true if the device is paired
      */
     public boolean isDevicePaired(String bluetoothAddress){
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-        for(BluetoothDevice device: pairedDevices){
-            if(device.getAddress().equals(bluetoothAddress)){
-                return true;
+        try {
+            Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+            for(BluetoothDevice device: pairedDevices){
+                if(device.getAddress().equals(bluetoothAddress)){
+                    return true;
+                }
             }
+        } catch (SecurityException e) {
+            Log.e(TAG, "Missing BLUETOOTH_CONNECT permission", e);
         }
         return false;
     }
@@ -417,6 +439,10 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
 
     protected ShimmerDevice initializeShimmer2r(AbstractSerialPortHal abstractSerialPortComm, ShimmerDevice shimmerDevice) {
         ShimmerSerialPortAndroid serialPort = (ShimmerSerialPortAndroid) abstractSerialPortComm;
+        if(serialPort.getBluetoothSocket()==null){
+            Log.e(TAG, "Bluetooth socket unavailable, connection failed");
+            return null;
+        }
         ((Shimmer) shimmerDevice).setRadio(serialPort.getBluetoothSocket());
         shimmerDevice.addCommunicationRoute(Configuration.COMMUNICATION_TYPE.BLUETOOTH);
         return shimmerDevice;
@@ -424,6 +450,10 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
 
     protected ShimmerDevice initializeShimmer3(AbstractSerialPortHal abstractSerialPortComm, ShimmerDevice shimmerDevice) {
         ShimmerSerialPortAndroid serialPort = (ShimmerSerialPortAndroid) abstractSerialPortComm;
+        if(serialPort.getBluetoothSocket()==null){
+            Log.e(TAG, "Bluetooth socket unavailable, connection failed");
+            return null;
+        }
         ((Shimmer) shimmerDevice).setRadio(serialPort.getBluetoothSocket());
         shimmerDevice.addCommunicationRoute(Configuration.COMMUNICATION_TYPE.BLUETOOTH);
         return shimmerDevice;
@@ -497,7 +527,13 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
 
     @Override
     public void loadBtShimmers(Object... params) {
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        Set<BluetoothDevice> pairedDevices;
+        try {
+            pairedDevices = mBluetoothAdapter.getBondedDevices();
+        } catch (SecurityException e) {
+            Log.e(TAG, "Missing BLUETOOTH_CONNECT permission", e);
+            return;
+        }
         TreeMap<String, BluetoothDeviceDetails> pairedCompatibleDevices = mapBTDevicesToComPortDetails(pairedDevices);
 
         mMapOfParsedBtComPortsDeepCopy.clear();
@@ -539,6 +575,17 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
             mMultiShimmer.put(i.getMacId(), i);
         }
         return mMultiShimmer;
+    }
+
+    private ShimmerDevice getConnectedShimmerByAddress(String bluetoothAddress) {
+        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
+        bluetoothAddress = bluetoothAddress.replace(":","");
+        for(String key : mMultiShimmer.keySet()) {
+            if(key.replace(":","").equals(bluetoothAddress)) {
+                return (ShimmerDevice) mMultiShimmer.get(key);
+            }
+        }
+        return null;
     }
 
     // Only supported by Shimmer class (e.g. Shimmer3 Bluetoth Classic)
@@ -707,7 +754,10 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
         long enabledSensors=0;
         while (iterator.hasNext()) {
             ShimmerBluetooth stemp = (ShimmerBluetooth) iterator.next();
-            if ((stemp.getBluetoothRadioState()!= ShimmerBluetooth.BT_STATE.DISCONNECTED)){
+            String address = stemp.getMacId();
+            address = address.replace(":","");
+            bluetoothAddress = bluetoothAddress.replace(":","");
+            if ((stemp.getBluetoothRadioState()!= ShimmerBluetooth.BT_STATE.DISCONNECTED) && address.equals(bluetoothAddress)){
                 enabledSensors = stemp.getEnabledSensors();
             }
         }
@@ -986,11 +1036,9 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
     }
 
     public void setBlinkLEDCMD(String bluetoothAddress) {
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
-        ShimmerBluetooth stemp = (ShimmerBluetooth) mMultiShimmer.get(bluetoothAddress);
+        ShimmerBluetooth stemp = (ShimmerBluetooth) getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
-            if ((stemp.getBluetoothRadioState()== ShimmerBluetooth.BT_STATE.CONNECTED || stemp.getBluetoothRadioState()== ShimmerBluetooth.BT_STATE.SDLOGGING) && stemp.getBluetoothAddress().equals(bluetoothAddress)){
+            if ((stemp.getBluetoothRadioState()== ShimmerBluetooth.BT_STATE.CONNECTED || stemp.getBluetoothRadioState()== ShimmerBluetooth.BT_STATE.SDLOGGING)){
                 if (stemp.getCurrentLEDStatus()==0){
                     stemp.writeLEDCommand(1);
                 } else {
@@ -1002,50 +1050,36 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
     }
 
     public void enableLowPowerMag(String bluetoothAddress,boolean enable) {
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
-        ShimmerBluetooth stemp = (ShimmerBluetooth) mMultiShimmer.get(bluetoothAddress);
+        ShimmerBluetooth stemp = (ShimmerBluetooth) getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
-            if ((stemp.getBluetoothRadioState()== ShimmerBluetooth.BT_STATE.CONNECTED || stemp.getBluetoothRadioState()== ShimmerBluetooth.BT_STATE.SDLOGGING) && stemp.getBluetoothAddress().equals(bluetoothAddress)){
+            if ((stemp.getBluetoothRadioState()== ShimmerBluetooth.BT_STATE.CONNECTED || stemp.getBluetoothRadioState()== ShimmerBluetooth.BT_STATE.SDLOGGING)){
                 stemp.enableLowPowerMag(enable);
             }
         }
     }
 
     public void setBattLimitWarning(String bluetoothAddress, double limit) {
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
-        ShimmerBluetooth stemp = (ShimmerBluetooth) mMultiShimmer.get(bluetoothAddress);
+        ShimmerBluetooth stemp = (ShimmerBluetooth) getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
-            if (stemp.getBluetoothAddress().equals(bluetoothAddress)){
-                stemp.setBattLimitWarning(limit);
-            }
+            stemp.setBattLimitWarning(limit);
         }
 
     }
 
     public double getBattLimitWarning(String bluetoothAddress) {
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
         double limit=-1;
-        ShimmerBluetooth stemp = (ShimmerBluetooth) mMultiShimmer.get(bluetoothAddress);
+        ShimmerBluetooth stemp = (ShimmerBluetooth) getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
-            if (stemp.getBluetoothAddress().equals(bluetoothAddress)){
-                limit=stemp.getBattLimitWarning();
-            }
+            limit=stemp.getBattLimitWarning();
         }
         return limit;
     }
 
     public double getPacketReceptionRate(String bluetoothAddress) {
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
         double rate=-1;
-        ShimmerBluetooth stemp = (ShimmerBluetooth) mMultiShimmer.get(bluetoothAddress);
+        ShimmerBluetooth stemp = (ShimmerBluetooth) getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
-            if (stemp.getBluetoothAddress().equals(bluetoothAddress)){
-                rate=stemp.getPacketReceptionRate();
-            }
+            rate=stemp.getPacketReceptionRate();
         }
         return rate;
     }
@@ -1109,10 +1143,8 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
     }
 
     public String getFWVersion (String bluetoothAddress){
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
         String version="";
-        ShimmerDevice stemp=(ShimmerDevice) mMultiShimmer.get(bluetoothAddress);
+        ShimmerDevice stemp = getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
             version=stemp.getFirmwareVersionMajor()+"."+stemp.getFirmwareVersionMinor();
         }
@@ -1120,10 +1152,8 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
     }
 
     public int getShimmerVersion (String bluetoothAddress){
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
         int version=0;
-        ShimmerDevice stemp=(ShimmerDevice) mMultiShimmer.get(bluetoothAddress);
+        ShimmerDevice stemp = getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
             version=stemp.getHardwareVersion();
         }
@@ -1172,10 +1202,8 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
     }
 
     public boolean isUsingLogAndStreamFW(String bluetoothAddress){
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
         boolean logAndStream = false;
-        ShimmerDevice stemp=(ShimmerDevice) mMultiShimmer.get(bluetoothAddress);
+        ShimmerDevice stemp = getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
             if(stemp.getFirmwareIdentifier()==3)
                 logAndStream = true;
@@ -1185,9 +1213,7 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
     }
 
     public void readStatusLogAndStream(String bluetoothAddress){
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
-        ShimmerBluetooth stemp = (ShimmerBluetooth) mMultiShimmer.get(bluetoothAddress);
+        ShimmerBluetooth stemp = (ShimmerBluetooth) getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
             if(stemp.getFirmwareIdentifier()==3)
                 stemp.readStatusLogAndStream();
@@ -1195,9 +1221,7 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
     }
 
     public boolean isSensing(String bluetoothAddress){
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
-        ShimmerBluetooth stemp = (ShimmerBluetooth) mMultiShimmer.get(bluetoothAddress);
+        ShimmerBluetooth stemp = (ShimmerBluetooth) getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
             if(stemp.getFirmwareIdentifier()==3)
                 return stemp.isSensing();
@@ -1207,9 +1231,7 @@ public class ShimmerBluetoothManagerAndroid extends ShimmerBluetoothManager {
     }
 
     public boolean isDocked(String bluetoothAddress){
-        HashMap<String, Object> mMultiShimmer = getHashMapOfShimmersConnected();
-
-        ShimmerBluetooth stemp = (ShimmerBluetooth) mMultiShimmer.get(bluetoothAddress);
+        ShimmerBluetooth stemp = (ShimmerBluetooth) getConnectedShimmerByAddress(bluetoothAddress);
         if (stemp!=null){
             if(stemp.getFirmwareIdentifier()==3)
                 return stemp.isDocked();
