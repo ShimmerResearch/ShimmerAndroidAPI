@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.Display;
@@ -180,7 +181,7 @@ public class PlotFragment extends Fragment {
     }
 
 
-    private static Handler graphHandler = new Handler() {
+    private static Handler graphHandler = new Handler(Looper.getMainLooper()) {
 
 
         public void handleMessage(Message msg) {
@@ -324,5 +325,15 @@ public class PlotFragment extends Fragment {
         mPlotSeriesMap.clear();
         mPlotDataMap.clear();
         dynamicPlot.clear();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Clear static references to avoid leaking this fragment's Activity/View
+        context = null;
+        textViewDeviceName = null;
+        textViewDeviceState = null;
+        dynamicPlot = null;
     }
 }

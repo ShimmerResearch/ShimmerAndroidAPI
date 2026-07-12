@@ -6,7 +6,7 @@ apply plugin: 'maven-publish'
 
 android {
     namespace 'com.shimmerresearch.androidinstrumentdriver'
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     lintOptions {
         abortOnError false
@@ -15,8 +15,8 @@ android {
     defaultConfig {
         // Enabling multidex support.
         multiDexEnabled true
-        minSdkVersion 14
-        targetSdkVersion 33
+        minSdkVersion 21
+        targetSdkVersion 34
     }
 
     buildTypes {

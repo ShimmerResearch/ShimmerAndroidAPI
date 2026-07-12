@@ -111,7 +111,6 @@ public class SensorsEnabledFragment extends ListFragment {
             }
         }
 
-        final List<Integer> mSelectedItems = new ArrayList();  // Where we track the selected items
         Map<Integer, SensorDetails> sensorMap = shimmerDeviceClone.getSensorMap();
         int count = 0;
         for (SensorDetails sd : sensorMap.values()) {
@@ -152,10 +151,6 @@ public class SensorsEnabledFragment extends ListFragment {
                         Toast.makeText(activityContext, "Error! The Shimmer Device is null!", Toast.LENGTH_SHORT).show();
                     }
                     if (shimmerDeviceClone != null) {
-                        for (int selected : mSelectedItems) {
-                            shimmerDeviceClone.setSensorEnabledState((int) sensorKeys[selected], listEnabled[selected]);
-                        }
-
                         AssembleShimmerConfig.generateSingleShimmerConfig(shimmerDeviceClone, Configuration.COMMUNICATION_TYPE.BLUETOOTH);
 
                         if (shimmerDevice instanceof Shimmer || shimmerDevice instanceof VerisenseDevice) {

@@ -192,6 +192,6 @@ public class DeviceConfigFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_device_config, null);
+        return inflater.inflate(R.layout.fragment_device_config, container, false);
     }
 }

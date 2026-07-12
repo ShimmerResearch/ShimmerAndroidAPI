@@ -41,6 +41,7 @@ import com.shimmerresearch.tools.PlotManagerAndroid;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -183,6 +184,7 @@ public class PlotFragment extends Fragment {
         shimmerService.mPlotManager.updateDynamicPlot(dynamicPlot);
     }
     static Timer timer = null;
+    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
     static class PRRTask extends TimerTask {
         @Override
         public void run() {
@@ -190,7 +192,6 @@ public class PlotFragment extends Fragment {
                 double value = shimmerService.getShimmer(mBluetoothAddress).getPacketReceptionRateOverall();
                 final String formattedValue = String.format("%.2f", value);
 
-                Handler mainHandler = new Handler(Looper.getMainLooper());
                 mainHandler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -201,7 +202,7 @@ public class PlotFragment extends Fragment {
             }
         }
     }
-    private static Handler graphHandler = new Handler() {
+    private static Handler graphHandler = new Handler(Looper.getMainLooper()) {
 
 
         public void handleMessage(Message msg) {
@@ -228,7 +229,7 @@ public class PlotFragment extends Fragment {
                             Log.d(LOG_TAG,"Message Fully Initialized Received from Shimmer driver");
                             shimmerService.enableGraphingHandler(true);
                             deviceState = "Connected";
-                            if(selectedDeviceAddress.equals(mBluetoothAddress)){
+                            if(Objects.equals(selectedDeviceAddress, mBluetoothAddress)){
                                 textViewDeviceName.setText(mBluetoothAddress);
                                 textViewDeviceState.setText(deviceState);
                             }
@@ -244,7 +245,7 @@ public class PlotFragment extends Fragment {
                         case CONNECTING:
                             Log.d(LOG_TAG,"Driver is attempting to establish connection with Shimmer device");
                             deviceState = "Connecting";
-                            if(selectedDeviceAddress.equals(mBluetoothAddress)){
+                            if(Objects.equals(selectedDeviceAddress, mBluetoothAddress)){
                                 textViewDeviceName.setText(mBluetoothAddress);
                                 textViewDeviceState.setText(deviceState);
                             }
@@ -387,6 +388,21 @@ public class PlotFragment extends Fragment {
         selectedDeviceAddress = address;
         textViewDeviceName.setText(address);
         textViewDeviceState.setText("Connected");
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Stop the PRR polling task and clear static references to avoid leaking this fragment's Activity/View
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+        context = null;
+        textViewDeviceName = null;
+        textViewDeviceState = null;
+        textViewPRR = null;
+        dynamicPlot = null;
     }
 
 }

@@ -41,6 +41,7 @@ import android.widget.Toast;
 
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.shimmerresearch.androidinstrumentdriver.R;
 
@@ -58,6 +59,7 @@ public class ShimmerBluetoothDialog extends Activity {
     private static final String TAG = "DeviceListActivity";
     private static final boolean D = true;
     public final static int REQUEST_CONNECT_SHIMMER = 2;
+    private static final int REQUEST_BLUETOOTH_CONNECT_PERMISSION = 3;
 
     // Return Intent extra
     public static String EXTRA_DEVICE_ADDRESS = "device_address";
@@ -70,6 +72,7 @@ public class ShimmerBluetoothDialog extends Activity {
     private ArrayAdapter<String> mNewDevicesArrayAdapter;
     //private String[] deviceAddresses={"","","","","","",""};
     private Button scanButton;
+    private ListView pairedListView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,9 +96,10 @@ public class ShimmerBluetoothDialog extends Activity {
 
         scanButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                doDiscovery();
-//                v.setVisibility(View.GONE);
-                findViewById(R.id.layoutButton).setVisibility(View.GONE);
+                if (doDiscovery()) {
+//                    v.setVisibility(View.GONE);
+                    findViewById(R.id.layoutButton).setVisibility(View.GONE);
+                }
             }
         });
 
@@ -105,7 +109,7 @@ public class ShimmerBluetoothDialog extends Activity {
         mNewDevicesArrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name);
 
         // Find and set up the ListView for paired devices
-        ListView pairedListView = (ListView) findViewById(R.id.paired_devices);
+        pairedListView = (ListView) findViewById(R.id.paired_devices);
         pairedListView.setAdapter(mPairedDevicesArrayAdapter);
         pairedListView.setOnItemClickListener(mDeviceClickListener);
 
@@ -116,21 +120,39 @@ public class ShimmerBluetoothDialog extends Activity {
 
         // Register for broadcasts when a device is discovered
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        this.registerReceiver(mReceiver, filter);
+        ContextCompat.registerReceiver(this, mReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        this.registerReceiver(mReceiver, filter);
+        ContextCompat.registerReceiver(this, mReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         // Register for broadcasts when discovery has finished
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        this.registerReceiver(mReceiver, filter);
+        ContextCompat.registerReceiver(this, mReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
 
         // Get the local Bluetooth adapter
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        // Get a set of currently paired devices (guarded on API 31+ by BLUETOOTH_CONNECT)
+        populatePairedDevices();
+    }
+
+    /**
+     * Queries the bonded devices and populates the paired devices list.
+     * On API 31+ this requires BLUETOOTH_CONNECT; if not granted, the permission
+     * is requested and the listing is deferred until onRequestPermissionsResult.
+     */
+    private void populatePairedDevices() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, REQUEST_BLUETOOTH_CONNECT_PERMISSION);
+                return;
+            }
+        }
 
         // Get a set of currently paired devices
         Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
 
         // If there are paired devices, add each one to the ArrayAdapter
-        if (pairedDevices.size() > 0) {
+        mPairedDevicesArrayAdapter.clear();
+        if (pairedDevices != null && pairedDevices.size() > 0) {
             pairedListView.setEnabled(true);
             findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
             for (BluetoothDevice device : pairedDevices) {
@@ -140,6 +162,16 @@ public class ShimmerBluetoothDialog extends Activity {
             String noDevices = getResources().getText(R.string.none_paired).toString();
             mPairedDevicesArrayAdapter.add(noDevices);
             pairedListView.setEnabled(false);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_BLUETOOTH_CONNECT_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                populatePairedDevices();
+            }
         }
     }
 
@@ -159,8 +191,22 @@ public class ShimmerBluetoothDialog extends Activity {
     /**
      * Start device discover with the BluetoothAdapter
      */
-    private void doDiscovery() {
+    private boolean doDiscovery() {
         if (D) Log.d(TAG, "doDiscovery()");
+
+        // If we don't have permission to scan, bail out before touching any UI state
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return false;
+            }
+        }
 
         // Indicate scanning in the title
         setProgressBarIndeterminateVisibility(true);
@@ -171,25 +217,13 @@ public class ShimmerBluetoothDialog extends Activity {
         findViewById(R.id.layoutNewDevices).setVisibility(View.VISIBLE);
 
         // If we're already discovering, stop it
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return;
-            }
-        }
-
         if (mBtAdapter.isDiscovering()) {
             mBtAdapter.cancelDiscovery();
         }
 
         // Request discover from BluetoothAdapter
         mBtAdapter.startDiscovery();
+        return true;
     }
 
     // The on-click listener for all devices in the ListViews
@@ -227,7 +261,7 @@ public class ShimmerBluetoothDialog extends Activity {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // If it's already paired, skip it, because it's been listed already
-                if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                if (device != null && device.getBondState() != BluetoothDevice.BOND_BONDED) {
                     mNewDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 }
             // When discovery is finished, change the Activity title
