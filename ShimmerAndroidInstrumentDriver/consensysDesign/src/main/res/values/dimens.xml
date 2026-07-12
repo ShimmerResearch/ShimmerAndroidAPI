@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ===== Spacing scale ===== -->
+    <dimen name="cs_space_1">4dp</dimen>
+    <dimen name="cs_space_2">8dp</dimen>
+    <dimen name="cs_space_3">12dp</dimen>
+    <dimen name="cs_space_4">16dp</dimen>
+    <dimen name="cs_space_5">24dp</dimen>
+    <dimen name="cs_space_6">32dp</dimen>
+
+    <!-- ===== Shape ===== -->
+    <dimen name="cs_radius">2dp</dimen>
+    <dimen name="cs_hairline">1dp</dimen>
+    <dimen name="cs_stroke_focus">2dp</dimen>
+
+    <!-- ===== Type scale ===== -->
+    <dimen name="cs_text_xs">12sp</dimen>
+    <dimen name="cs_text_sm">13sp</dimen>
+    <dimen name="cs_text_md">14sp</dimen>
+    <dimen name="cs_text_lg">16sp</dimen>
+    <dimen name="cs_text_xl">18sp</dimen>
+    <dimen name="cs_text_2xl">22sp</dimen>
+    <dimen name="cs_text_3xl">24sp</dimen>
+
+    <!-- ===== Control metrics ===== -->
+    <dimen name="cs_button_min_height">32dp</dimen>
+    <dimen name="cs_button_pad_h">16dp</dimen>
+    <dimen name="cs_button_pad_v">6dp</dimen>
+    <dimen name="cs_input_min_height">36dp</dimen>
+    <dimen name="cs_input_pad_h">8dp</dimen>
+    <dimen name="cs_input_pad_v">6dp</dimen>
+    <dimen name="cs_spinner_pad_end">28dp</dimen>
+    <dimen name="cs_control_box">15dp</dimen>
+    <dimen name="cs_radio_dot">8dp</dimen>
+    <dimen name="cs_seekbar_track">4dp</dimen>
+    <dimen name="cs_seekbar_thumb">14dp</dimen>
+    <dimen name="cs_progress_height">18dp</dimen>
+    <dimen name="cs_panel_padding">16dp</dimen>
+    <dimen name="cs_badge_pad_h">10dp</dimen>
+    <dimen name="cs_badge_pad_v">2dp</dimen>
+    <dimen name="cs_cell_pad_h">12dp</dimen>
+    <dimen name="cs_cell_pad_v">8dp</dimen>
+    <dimen name="cs_separator_height">20dp</dimen>
+    <dimen name="cs_dialog_pad">16dp</dimen>
+
+</resources>

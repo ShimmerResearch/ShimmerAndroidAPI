@@ -48,6 +48,7 @@ import static com.shimmerresearch.android.guiUtilities.ShimmerBluetoothDialog.EX
 import static com.shimmerresearch.android.guiUtilities.ShimmerBluetoothDialog.EXTRA_DEVICE_NAME;
 import static com.shimmerresearch.android.guiUtilities.ShimmerBluetoothDialog.REQUEST_CONNECT_SHIMMER;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
@@ -62,7 +63,7 @@ import androidx.documentfile.provider.DocumentFile;
  * Note: The arrays data structure is an alternative to the standard Multimap ({@link ObjectCluster#mPropertyCluster}) data structure.
  * Switching to using the arrays can improve packet reception rate on slower Android devices.
  */
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_FILE_REQUEST_SHIMMER = 99;
     ShimmerBluetoothManagerAndroid btManager;
     private String bluetoothAdd = "";

@@ -51,6 +51,7 @@ android {
 }
 
 dependencies {
+    implementation project(':consensysDesign')
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
     androidTestImplementation 'androidx.annotation:annotation:1.7.1'

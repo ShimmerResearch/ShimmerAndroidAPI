@@ -14,6 +14,7 @@ import javax.vecmath.Quat4d;
 
 import android.Manifest;
 import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.opengl.GLSurfaceView;
@@ -53,7 +54,7 @@ import com.shimmerresearch.shimmer3dexample.R;
  * 3D Cube generation taken from above
  */
 
-public class Shimmer3DOrientationExample extends Activity {
+public class Shimmer3DOrientationExample extends AppCompatActivity {
 
 	/** The OpenGL View */
 	private GLSurfaceView glSurface;

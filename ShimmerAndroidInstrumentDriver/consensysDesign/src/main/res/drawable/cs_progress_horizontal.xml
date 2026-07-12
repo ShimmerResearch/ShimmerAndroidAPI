@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- container: white box, 1dp grey border, 2dp radius -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_surface" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_border_strong" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- secondary progress -->
+    <item android:id="@android:id/secondaryProgress">
+        <clip>
+            <shape android:shape="rectangle">
+                <solid android:color="@color/cs_surface_alt" />
+            </shape>
+        </clip>
+    </item>
+    <!-- green fill, square inner corners -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <solid android:color="@color/cs_green_progress" />
+            </shape>
+        </clip>
+    </item>
+</layer-list>

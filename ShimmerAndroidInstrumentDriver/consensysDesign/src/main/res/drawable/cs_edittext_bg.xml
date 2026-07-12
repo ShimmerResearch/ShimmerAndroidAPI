@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- disabled -->
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_surface" />
+            <stroke android:width="@dimen/cs_hairline" android:color="#73A0A0A0" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- focused: 2dp orange stroke -->
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_surface" />
+            <stroke android:width="@dimen/cs_stroke_focus" android:color="@color/cs_orange" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- default -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_surface" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_border_strong" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+</selector>

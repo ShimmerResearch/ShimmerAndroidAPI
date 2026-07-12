@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- pressed: subtle orange tint -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_orange_tint" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- default: transparent, no border -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+</selector>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- orange 15dp box -->
+    <item>
+        <shape android:shape="rectangle">
+            <size android:width="@dimen/cs_control_box" android:height="@dimen/cs_control_box" />
+            <solid android:color="@color/cs_orange" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_orange" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- white check, inset to centre inside the box -->
+    <item
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp"
+        android:drawable="@drawable/cs_ic_check" />
+</layer-list>

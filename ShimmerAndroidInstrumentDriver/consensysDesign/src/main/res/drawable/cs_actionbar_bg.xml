@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- White action bar / toolbar with a 1dp #D3D3D3 bottom hairline, no elevation. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- hairline layer fills the full height -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_border" />
+        </shape>
+    </item>
+    <!-- white surface covers everything except the bottom 1dp -->
+    <item android:bottom="@dimen/cs_hairline">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_surface" />
+        </shape>
+    </item>
+</layer-list>

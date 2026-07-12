@@ -20,6 +20,7 @@ package com.shimmerresearch.orientationexample;
 import java.util.Set;
 
 import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -49,7 +50,7 @@ import com.shimmerresearch.shimmer3dexample.R;
  * Activity in the result Intent.
  * 
  */
-public class DeviceListActivity extends Activity {
+public class DeviceListActivity extends AppCompatActivity {
     // Debugging
     private static final String TAG = "DeviceListActivity";
     private static final boolean D = true;

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- TextField-style box -->
+    <item>
+        <selector>
+            <item android:state_enabled="false">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_surface" />
+                    <stroke android:width="@dimen/cs_hairline" android:color="#73A0A0A0" />
+                    <corners android:radius="@dimen/cs_radius" />
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_surface" />
+                    <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_border_strong" />
+                    <corners android:radius="@dimen/cs_radius" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+    <!-- grey chevron pinned to the right edge -->
+    <item
+        android:width="12dp"
+        android:height="12dp"
+        android:gravity="center_vertical|right"
+        android:right="10dp"
+        android:drawable="@drawable/cs_ic_chevron_down" />
+</layer-list>

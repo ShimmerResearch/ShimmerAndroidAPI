@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Default (API 21-22) spinner background: the TextField-style box only.
+    The grey chevron overlay is added in drawable-v23/cs_spinner_bg.xml, which
+    relies on layer-list item gravity/size (API 23+). The spinner reserves
+    right padding via cs_spinner_pad_end so the arrow area stays clear.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_surface" />
+            <stroke android:width="@dimen/cs_hairline" android:color="#73A0A0A0" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_surface" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_border_strong" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+</selector>

@@ -1,24 +1,27 @@
-<?xml version="1.0" encoding="utf-8"?>   
+<?xml version="1.0" encoding="utf-8"?>
  <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:background="@color/cs_surface"
     >
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    android:padding="@dimen/cs_space_4"
+    android:background="@color/cs_surface" >
 
      <CheckBox
         android:id="@+id/checkBoxLowPowerMag"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Enable Low Power Mag" />
-    
+
      <CheckBox
         android:id="@+id/checkBoxGyroOnTheFlyCal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Enable Gyro On-The-Fly Calibration" />
-     
+
 </LinearLayout>
 </ScrollView>

@@ -1,74 +1,116 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <android.widget.LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context="com.shimmerresearch.efficientdataarrayexample.MainActivity"
+<android.widget.LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.shimmerresearch.efficientdataarrayexample.MainActivity"
+    android:orientation="vertical"
+    android:padding="@dimen/cs_space_4">
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Please refer to the Android Logcat for signal data"
+        android:textSize="13sp"
+        android:textColor="@color/cs_text"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/cs_space_2"
+        android:layout_marginBottom="@dimen/cs_space_4"
+        android:text="Starting Streaming will also print all enabled channels' CAL data to a CSV file in the external storage root directory. This file is named using the current date and time"
+        android:textSize="13sp"
+        android:textColor="@color/cs_text"
+        android:textStyle="italic" />
+
+    <TextView
+        style="@style/Widget.Consensys.SectionHeading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/cs_space_2"
+        android:text="CONNECTION" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center">
-
-
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Please refer to the Android Logcat for signal data"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Starting Streaming will also print all enabled channels' CAL data to a CSV file in the external storage root directory. This file is named using the current date and time"
-            android:textStyle="italic"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-
-    <Button
-            android:id="@+id/button2"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:text="Start Streaming"
-            android:onClick="startStreaming"
-            tools:layout_editor_absoluteX="133dp"
-            tools:layout_editor_absoluteY="447dp" />
-
-        <Button
-            android:id="@+id/button3"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:text="Stop Streaming"
-            tools:layout_editor_absoluteX="133dp"
-            tools:layout_editor_absoluteY="447dp"
-            android:onClick="stopStreaming" />
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_4"
+        android:layout_marginBottom="@dimen/cs_space_4">
 
         <Button
             android:id="@+id/button5"
+            style="@style/Widget.Consensys.Button.Accent"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:onClick="connectDevice"
             android:text="Connect" />
 
-    <Button
-        android:id="@+id/buttonDisconnect"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:onClick="disconnectDevice"
-        android:text="Disconnect" />
+        <Button
+            android:id="@+id/buttonDisconnect"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:onClick="disconnectDevice"
+            android:text="Disconnect" />
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="200dp"
+    <TextView
+        style="@style/Widget.Consensys.SectionHeading"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="openLogFilesList"
-        android:text="List CSV Log Files"
-        android:visibility="invisible" />
+        android:layout_marginBottom="@dimen/cs_space_2"
+        android:text="STREAMING" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_4"
+        android:layout_marginBottom="@dimen/cs_space_4">
+
+        <Button
+            android:id="@+id/button2"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:onClick="startStreaming"
+            android:text="Start Streaming" />
+
+        <Button
+            android:id="@+id/button3"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:onClick="stopStreaming"
+            android:text="Stop Streaming" />
+    </LinearLayout>
+
+    <TextView
+        style="@style/Widget.Consensys.SectionHeading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/cs_space_2"
+        android:text="LOGS" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_4">
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:onClick="openLogFilesList"
+            android:text="List CSV Log Files"
+            android:visibility="invisible" />
+    </LinearLayout>
 
 </android.widget.LinearLayout>

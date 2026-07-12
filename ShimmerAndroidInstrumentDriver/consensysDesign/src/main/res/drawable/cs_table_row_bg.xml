@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Table row background with a 1dp bottom divider (#EAEAEA).
+    State colours: pressed #F5F5F5, activated/selected #FDEFE7, else white.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_grey_100" />
+                </shape>
+            </item>
+            <item android:bottom="@dimen/cs_hairline">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_surface_alt" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_activated="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_grey_100" />
+                </shape>
+            </item>
+            <item android:bottom="@dimen/cs_hairline">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_orange_tint" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_selected="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_grey_100" />
+                </shape>
+            </item>
+            <item android:bottom="@dimen/cs_hairline">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_orange_tint" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item>
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_grey_100" />
+                </shape>
+            </item>
+            <item android:bottom="@dimen/cs_hairline">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/cs_surface" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>

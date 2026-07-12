@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ============================================================= -->
+    <!-- Text appearances                                              -->
+    <!-- ============================================================= -->
+
+    <style name="TextAppearance.Consensys" parent="TextAppearance.AppCompat">
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+    </style>
+
+    <style name="TextAppearance.Consensys.Body">
+        <item name="android:textSize">@dimen/cs_text_md</item>
+        <item name="android:textColor">@color/cs_text</item>
+    </style>
+
+    <style name="TextAppearance.Consensys.Value">
+        <item name="android:textSize">@dimen/cs_text_md</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+    </style>
+
+    <style name="TextAppearance.Consensys.Button">
+        <item name="android:textSize">@dimen/cs_text_sm</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
+
+    <style name="TextAppearance.Consensys.ActionBarTitle" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:textSize">@dimen/cs_text_lg</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+    </style>
+
+    <style name="TextAppearance.Consensys.DialogTitle" parent="TextAppearance.AppCompat.Title">
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:textSize">@dimen/cs_text_lg</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Base widget text styles                                       -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.TextView" parent="Widget.AppCompat.TextView">
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:textColor">@color/cs_text</item>
+        <item name="android:textSize">@dimen/cs_text_md</item>
+    </style>
+
+    <!-- Field label: 12sp bold UPPERCASE #808080, 4dp bottom margin -->
+    <style name="Widget.Consensys.FieldLabel" parent="Widget.Consensys.TextView">
+        <item name="android:textSize">@dimen/cs_text_xs</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/cs_text</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:layout_marginBottom">@dimen/cs_space_1</item>
+    </style>
+
+    <!-- Section heading: 13sp bold UPPERCASE #808080, wider tracking -->
+    <style name="Widget.Consensys.SectionHeading" parent="Widget.Consensys.TextView">
+        <item name="android:textSize">@dimen/cs_text_sm</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/cs_text</item>
+        <item name="android:letterSpacing">0.06</item>
+    </style>
+
+    <!-- Panel title: 13sp bold UPPERCASE #484848, 12dp bottom margin -->
+    <style name="Widget.Consensys.PanelTitle" parent="Widget.Consensys.TextView">
+        <item name="android:textSize">@dimen/cs_text_sm</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:layout_marginBottom">@dimen/cs_space_3</item>
+    </style>
+
+    <!-- Spinner dropdown item text -->
+    <style name="Widget.Consensys.SpinnerItem" parent="Widget.AppCompat.TextView.SpinnerItem">
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:textSize">@dimen/cs_text_md</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+    </style>
+
+    <style name="Widget.Consensys.DropDownItem" parent="Widget.AppCompat.DropDownItem.Spinner">
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:textSize">@dimen/cs_text_md</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Panel container                                               -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.Panel" parent="">
+        <item name="android:background">@drawable/cs_panel_bg</item>
+    </style>
+
+    <style name="Widget.Consensys.Panel.Padded">
+        <item name="android:padding">@dimen/cs_panel_padding</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Buttons                                                       -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.Button" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/cs_button_bg</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">@color/cs_button_text</item>
+        <item name="android:textSize">@dimen/cs_text_sm</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:minHeight">@dimen/cs_button_min_height</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingLeft">@dimen/cs_button_pad_h</item>
+        <item name="android:paddingRight">@dimen/cs_button_pad_h</item>
+        <item name="android:paddingTop">@dimen/cs_button_pad_v</item>
+        <item name="android:paddingBottom">@dimen/cs_button_pad_v</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
+    <style name="Widget.Consensys.Button.Accent">
+        <item name="android:background">@drawable/cs_button_accent_bg</item>
+        <item name="android:textColor">@color/cs_button_accent_text</item>
+    </style>
+
+    <style name="Widget.Consensys.Button.Ghost" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:background">@drawable/cs_button_ghost_bg</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">@color/cs_button_text</item>
+        <item name="android:textSize">@dimen/cs_text_sm</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:minHeight">@dimen/cs_button_min_height</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingLeft">@dimen/cs_button_pad_h</item>
+        <item name="android:paddingRight">@dimen/cs_button_pad_h</item>
+        <item name="android:paddingTop">@dimen/cs_button_pad_v</item>
+        <item name="android:paddingBottom">@dimen/cs_button_pad_v</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Text fields                                                   -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.EditText" parent="Widget.AppCompat.EditText">
+        <item name="android:background">@drawable/cs_edittext_bg</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+        <item name="android:textColorHint">@color/cs_text_mid</item>
+        <item name="android:textSize">@dimen/cs_text_md</item>
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:minHeight">@dimen/cs_input_min_height</item>
+        <item name="android:paddingLeft">@dimen/cs_input_pad_h</item>
+        <item name="android:paddingRight">@dimen/cs_input_pad_h</item>
+        <item name="android:paddingTop">@dimen/cs_input_pad_v</item>
+        <item name="android:paddingBottom">@dimen/cs_input_pad_v</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Checkbox / Radio                                              -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.Checkbox" parent="Widget.AppCompat.CompoundButton.CheckBox">
+        <item name="android:button">@drawable/cs_checkbox_button</item>
+        <item name="buttonCompat">@drawable/cs_checkbox_button</item>
+        <item name="android:buttonTint">@null</item>
+        <item name="buttonTint">@null</item>
+        <item name="android:textColor">@color/cs_control_text</item>
+        <item name="android:textSize">@dimen/cs_text_sm</item>
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:paddingLeft">@dimen/cs_space_2</item>
+        <item name="android:paddingStart">@dimen/cs_space_2</item>
+    </style>
+
+    <style name="Widget.Consensys.Radio" parent="Widget.AppCompat.CompoundButton.RadioButton">
+        <item name="android:button">@drawable/cs_radio_button</item>
+        <item name="buttonCompat">@drawable/cs_radio_button</item>
+        <item name="android:buttonTint">@null</item>
+        <item name="buttonTint">@null</item>
+        <item name="android:textColor">@color/cs_control_text</item>
+        <item name="android:textSize">@dimen/cs_text_sm</item>
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:paddingLeft">@dimen/cs_space_2</item>
+        <item name="android:paddingStart">@dimen/cs_space_2</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Spinner                                                       -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.Spinner" parent="Widget.AppCompat.Spinner">
+        <item name="android:background">@drawable/cs_spinner_bg</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:paddingLeft">@dimen/cs_input_pad_h</item>
+        <item name="android:paddingRight">@dimen/cs_spinner_pad_end</item>
+        <item name="android:paddingTop">@dimen/cs_input_pad_v</item>
+        <item name="android:paddingBottom">@dimen/cs_input_pad_v</item>
+        <item name="android:minHeight">@dimen/cs_input_min_height</item>
+        <item name="android:popupBackground">@drawable/cs_panel_bg</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- SeekBar                                                       -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.SeekBar" parent="Widget.AppCompat.SeekBar">
+        <item name="android:progressDrawable">@drawable/cs_seekbar_progress</item>
+        <item name="android:thumb">@drawable/cs_seekbar_thumb</item>
+        <item name="android:thumbTint">@null</item>
+        <item name="android:splitTrack">false</item>
+        <item name="android:maxHeight">@dimen/cs_seekbar_track</item>
+        <item name="android:minHeight">@dimen/cs_seekbar_track</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- ProgressBar (horizontal)                                      -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.ProgressBar" parent="Widget.AppCompat.ProgressBar.Horizontal">
+        <item name="android:progressDrawable">@drawable/cs_progress_horizontal</item>
+        <item name="android:minHeight">@dimen/cs_progress_height</item>
+        <item name="android:maxHeight">@dimen/cs_progress_height</item>
+    </style>
+
+    <style name="Widget.Consensys.ProgressBar.Accent">
+        <item name="android:progressDrawable">@drawable/cs_progress_horizontal_accent</item>
+    </style>
+
+    <!-- Indeterminate circular spinner tinted orange -->
+    <style name="Widget.Consensys.ProgressBar.Circular" parent="Widget.AppCompat.ProgressBar">
+        <item name="android:indeterminateTint">@color/cs_orange</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Status badges (TextView chips)                                -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.StatusBadge" parent="Widget.Consensys.TextView">
+        <item name="android:textSize">@dimen/cs_text_xs</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:paddingLeft">@dimen/cs_badge_pad_h</item>
+        <item name="android:paddingRight">@dimen/cs_badge_pad_h</item>
+        <item name="android:paddingTop">@dimen/cs_badge_pad_v</item>
+        <item name="android:paddingBottom">@dimen/cs_badge_pad_v</item>
+        <item name="android:background">@drawable/cs_status_badge_neutral</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+    </style>
+
+    <style name="Widget.Consensys.StatusBadge.Neutral">
+        <item name="android:background">@drawable/cs_status_badge_neutral</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+    </style>
+
+    <style name="Widget.Consensys.StatusBadge.Success">
+        <item name="android:background">@drawable/cs_status_badge_success</item>
+        <item name="android:textColor">@color/cs_green_badge_text</item>
+    </style>
+
+    <style name="Widget.Consensys.StatusBadge.Error">
+        <item name="android:background">@drawable/cs_status_badge_error</item>
+        <item name="android:textColor">@color/cs_red</item>
+    </style>
+
+    <style name="Widget.Consensys.StatusBadge.Info">
+        <item name="android:background">@drawable/cs_status_badge_info</item>
+        <item name="android:textColor">@color/cs_blue</item>
+    </style>
+
+    <style name="Widget.Consensys.StatusBadge.Accent">
+        <item name="android:background">@drawable/cs_status_badge_accent</item>
+        <item name="android:textColor">@color/cs_orange_deep</item>
+    </style>
+
+    <style name="Widget.Consensys.StatusBadge.Pending">
+        <item name="android:background">@drawable/cs_status_badge_pending</item>
+        <item name="android:textColor">@color/cs_text_mid</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Data table                                                    -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.TableHeaderCell" parent="Widget.Consensys.TextView">
+        <item name="android:textSize">@dimen/cs_text_xs</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:textColor">@color/cs_text</item>
+        <item name="android:background">@drawable/cs_table_header_bg</item>
+        <item name="android:paddingLeft">@dimen/cs_cell_pad_h</item>
+        <item name="android:paddingRight">@dimen/cs_cell_pad_h</item>
+        <item name="android:paddingTop">@dimen/cs_cell_pad_v</item>
+        <item name="android:paddingBottom">@dimen/cs_cell_pad_v</item>
+    </style>
+
+    <style name="Widget.Consensys.TableCell" parent="Widget.Consensys.TextView">
+        <item name="android:textSize">@dimen/cs_text_sm</item>
+        <item name="android:textColor">@color/cs_text_strong</item>
+        <item name="android:paddingLeft">@dimen/cs_cell_pad_h</item>
+        <item name="android:paddingRight">@dimen/cs_cell_pad_h</item>
+        <item name="android:paddingTop">@dimen/cs_cell_pad_v</item>
+        <item name="android:paddingBottom">@dimen/cs_cell_pad_v</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Toolbar / ActionBar                                           -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.ActionBar" parent="Widget.AppCompat.Light.ActionBar.Solid">
+        <item name="background">@drawable/cs_actionbar_bg</item>
+        <item name="android:background">@drawable/cs_actionbar_bg</item>
+        <item name="elevation">0dp</item>
+        <item name="android:elevation">0dp</item>
+        <item name="titleTextStyle">@style/TextAppearance.Consensys.ActionBarTitle</item>
+        <item name="android:titleTextStyle">@style/TextAppearance.Consensys.ActionBarTitle</item>
+    </style>
+
+    <style name="Widget.Consensys.Toolbar" parent="Widget.AppCompat.Toolbar">
+        <item name="android:background">@drawable/cs_toolbar_bg</item>
+        <item name="android:elevation">0dp</item>
+        <item name="titleTextColor">@color/cs_text_strong</item>
+        <item name="titleTextAppearance">@style/TextAppearance.Consensys.ActionBarTitle</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Dialog buttons                                                -->
+    <!-- ============================================================= -->
+
+    <style name="Widget.Consensys.Button.Dialog" parent="Widget.Consensys.Button.Ghost" />
+
+    <style name="Widget.Consensys.Button.Dialog.Accent" parent="Widget.Consensys.Button.Ghost">
+        <item name="android:textColor">@color/cs_orange</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Dialog theme                                                  -->
+    <!-- ============================================================= -->
+
+    <style name="Theme.Consensys.Dialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/cs_orange</item>
+        <item name="colorPrimary">@color/cs_orange</item>
+        <item name="colorControlActivated">@color/cs_orange</item>
+        <item name="colorControlNormal">@color/cs_text</item>
+        <item name="colorControlHighlight">@color/cs_control_highlight</item>
+        <item name="android:windowBackground">@drawable/cs_dialog_bg</item>
+        <item name="android:backgroundDimAmount">0.35</item>
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:textColorPrimary">@color/cs_text_strong</item>
+        <item name="android:textColorSecondary">@color/cs_text</item>
+        <item name="android:windowTitleStyle">@style/TextAppearance.Consensys.DialogTitle</item>
+        <item name="buttonBarButtonStyle">@style/Widget.Consensys.Button.Dialog</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Consensys.Button.Dialog.Accent</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Consensys.Button.Dialog</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.Consensys.Button.Dialog</item>
+    </style>
+
+    <!-- ============================================================= -->
+    <!-- Application themes                                            -->
+    <!-- ============================================================= -->
+
+    <style name="Theme.Consensys" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Palette -->
+        <item name="colorPrimary">@color/cs_surface</item>
+        <item name="colorPrimaryDark">@color/cs_orange_pressed</item>
+        <item name="colorAccent">@color/cs_orange</item>
+        <item name="colorControlActivated">@color/cs_orange</item>
+        <item name="colorControlNormal">@color/cs_text</item>
+        <item name="colorControlHighlight">@color/cs_control_highlight</item>
+
+        <!-- Surfaces + text -->
+        <item name="android:windowBackground">@color/cs_surface</item>
+        <item name="android:colorBackground">@color/cs_surface</item>
+        <item name="android:textColorPrimary">@color/cs_text_strong</item>
+        <item name="android:textColorSecondary">@color/cs_text</item>
+        <item name="android:textColorHint">@color/cs_text_mid</item>
+        <item name="android:statusBarColor">@color/cs_orange_pressed</item>
+
+        <!-- Global font -->
+        <item name="android:fontFamily">@font/carlito</item>
+        <item name="fontFamily">@font/carlito</item>
+        <item name="android:textViewStyle">@style/Widget.Consensys.TextView</item>
+
+        <!-- Default widget styles -->
+        <item name="buttonStyle">@style/Widget.Consensys.Button</item>
+        <item name="android:buttonStyle">@style/Widget.Consensys.Button</item>
+        <item name="editTextStyle">@style/Widget.Consensys.EditText</item>
+        <item name="android:editTextStyle">@style/Widget.Consensys.EditText</item>
+        <item name="checkboxStyle">@style/Widget.Consensys.Checkbox</item>
+        <item name="android:checkboxStyle">@style/Widget.Consensys.Checkbox</item>
+        <item name="radioButtonStyle">@style/Widget.Consensys.Radio</item>
+        <item name="android:radioButtonStyle">@style/Widget.Consensys.Radio</item>
+        <item name="seekBarStyle">@style/Widget.Consensys.SeekBar</item>
+        <item name="android:seekBarStyle">@style/Widget.Consensys.SeekBar</item>
+        <item name="spinnerStyle">@style/Widget.Consensys.Spinner</item>
+        <item name="android:spinnerStyle">@style/Widget.Consensys.Spinner</item>
+        <item name="android:spinnerItemStyle">@style/Widget.Consensys.SpinnerItem</item>
+        <item name="android:spinnerDropDownItemStyle">@style/Widget.Consensys.DropDownItem</item>
+
+        <!-- Action bar -->
+        <item name="actionBarStyle">@style/Widget.Consensys.ActionBar</item>
+        <item name="android:actionBarStyle">@style/Widget.Consensys.ActionBar</item>
+
+        <!-- Dialogs -->
+        <item name="alertDialogTheme">@style/Theme.Consensys.Dialog</item>
+        <item name="android:alertDialogTheme">@style/Theme.Consensys.Dialog</item>
+    </style>
+
+    <style name="Theme.Consensys.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+</resources>

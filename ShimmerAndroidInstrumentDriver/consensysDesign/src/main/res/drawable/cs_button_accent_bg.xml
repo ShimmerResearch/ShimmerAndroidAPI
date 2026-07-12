@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- disabled -->
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_orange_disabled" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_orange_disabled" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- pressed -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_orange_pressed" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_orange_pressed" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- focused -->
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_orange_deep" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_orange_deep" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- default -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_orange" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_orange" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+</selector>

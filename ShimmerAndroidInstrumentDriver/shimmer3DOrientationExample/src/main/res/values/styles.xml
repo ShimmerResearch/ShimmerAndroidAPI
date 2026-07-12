@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Application theme (keeps a restyled white action bar for the options menu) -->
+    <style name="AppTheme" parent="Theme.Consensys" />
+
+</resources>

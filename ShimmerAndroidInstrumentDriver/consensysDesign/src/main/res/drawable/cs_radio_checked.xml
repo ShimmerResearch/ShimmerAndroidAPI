@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 15dp circle, white fill, orange ring -->
+    <item>
+        <shape android:shape="oval">
+            <size android:width="@dimen/cs_control_box" android:height="@dimen/cs_control_box" />
+            <solid android:color="@color/cs_surface" />
+            <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_orange" />
+        </shape>
+    </item>
+    <!-- 8dp orange centre dot: inset (15-8)/2 approx 3.5dp all sides -->
+    <item
+        android:left="3.5dp"
+        android:top="3.5dp"
+        android:right="3.5dp"
+        android:bottom="3.5dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/cs_orange" />
+        </shape>
+    </item>
+</layer-list>

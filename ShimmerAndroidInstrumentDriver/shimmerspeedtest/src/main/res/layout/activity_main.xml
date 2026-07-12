@@ -9,13 +9,16 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Theme.ShimmerAndroidInstrumentDriver.AppBarOverlay">
+        android:background="@color/cs_surface"
+        android:theme="@style/Theme.ShimmerAndroidInstrumentDriver.AppBarOverlay"
+        app:elevation="0dp">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
+            android:background="@drawable/cs_actionbar_bg"
+            app:titleTextColor="@color/cs_text_strong"
             app:popupTheme="@style/Theme.ShimmerAndroidInstrumentDriver.PopupOverlay" />
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -29,6 +32,8 @@
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="@dimen/fab_margin"
         android:layout_marginBottom="16dp"
+        app:backgroundTint="@color/cs_orange"
+        app:tint="@color/cs_text_on_accent"
         app:srcCompat="@android:drawable/ic_dialog_email" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -4,6 +4,7 @@ package com.shimmerresearch.orientationexample;
 import java.lang.ref.WeakReference;
 
 import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,7 +15,7 @@ import android.widget.Toast;
 
 import com.shimmerresearch.shimmer3dexample.R;
 
-public class ConfigureActivity extends Activity{
+public class ConfigureActivity extends AppCompatActivity{
 	// Return Intent extra
 	public static String mDone = "Done";
 

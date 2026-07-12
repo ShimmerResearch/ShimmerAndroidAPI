@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <size android:width="@dimen/cs_control_box" android:height="@dimen/cs_control_box" />
+    <solid android:color="@color/cs_surface" />
+    <stroke android:width="@dimen/cs_hairline" android:color="@color/cs_border_strong" />
+    <corners android:radius="@dimen/cs_radius" />
+</shape>

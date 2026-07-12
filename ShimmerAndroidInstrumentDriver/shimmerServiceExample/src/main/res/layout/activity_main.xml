@@ -10,22 +10,23 @@
         android:layout_width="match_parent"
         android:layout_height="72dp"
         android:layout_marginTop="?attr/actionBarInsetTop"
-        android:background="?attr/colorPrimary"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        app:titleTextAppearance="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"
+        android:background="@drawable/cs_actionbar_bg"
+        android:theme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextAppearance="@style/TextAppearance.Consensys.ActionBarTitle"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:titleTextColor="@android:color/white" />
+        app:titleTextColor="@color/cs_text_strong" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#33b5e5"
+        android:background="@android:color/white"
         app:tabMode="scrollable"
         app:tabGravity="fill"
-        app:tabIndicatorColor="@android:color/white"
-        app:tabTextColor="@android:color/white"
-        app:tabSelectedTextColor="@android:color/white"
+        app:tabIndicatorColor="@color/cs_orange"
+        app:tabIndicatorHeight="2dp"
+        app:tabTextColor="@color/cs_text_mid"
+        app:tabSelectedTextColor="@color/cs_orange"
         app:tabIndicatorFullWidth="false"
         app:tabTextAppearance="@style/TabTextAppearance" />
 

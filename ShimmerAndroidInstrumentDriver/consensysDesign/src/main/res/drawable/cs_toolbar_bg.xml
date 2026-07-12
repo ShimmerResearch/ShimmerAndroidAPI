@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Alias of the action bar background: white surface + 1dp bottom hairline. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_border" />
+        </shape>
+    </item>
+    <item android:bottom="@dimen/cs_hairline">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/cs_surface" />
+        </shape>
+    </item>
+</layer-list>

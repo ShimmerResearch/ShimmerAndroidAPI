@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 1dp x 20dp vertical separator, #D7D7D7. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <size android:width="@dimen/cs_hairline" android:height="@dimen/cs_separator_height" />
+    <solid android:color="@color/cs_grey_300" />
+</shape>

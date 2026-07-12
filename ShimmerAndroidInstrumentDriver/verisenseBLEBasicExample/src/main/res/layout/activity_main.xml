@@ -6,85 +6,124 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity"
     android:orientation="vertical"
-    android:gravity="center">
-
+    android:padding="@dimen/cs_space_4">
 
     <TextView
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/cs_space_4"
         android:text="Please refer to the Android Logcat for signal data"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:textSize="13sp"
+        android:textColor="@color/cs_text" />
 
-    <Button
-        android:id="@+id/button2"
-        android:layout_width="200dp"
+    <TextView
+        style="@style/Widget.Consensys.SectionHeading"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="startStreaming"
-        android:text="Start Streaming"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="447dp" />
+        android:layout_marginBottom="@dimen/cs_space_2"
+        android:text="CONNECTION" />
 
-    <Button
-        android:id="@+id/button3"
-        android:layout_width="200dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Stop Streaming"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="447dp"
-        android:onClick="stopStreaming" />
+        android:orientation="vertical"
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_4"
+        android:layout_marginBottom="@dimen/cs_space_4">
 
-    <Button
-        android:id="@+id/button5"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:onClick="connectDevice"
-        android:text="Connect" />
+        <Button
+            android:id="@+id/button5"
+            style="@style/Widget.Consensys.Button.Accent"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:onClick="connectDevice"
+            android:text="Connect" />
 
-    <Button
-        android:id="@+id/button6"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:onClick="disconnectDevice"
-        android:text="Disconnect" />
+        <Button
+            android:id="@+id/button6"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:onClick="disconnectDevice"
+            android:text="Disconnect" />
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/button7"
-        android:layout_width="200dp"
+    <TextView
+        style="@style/Widget.Consensys.SectionHeading"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Read Prod Config"
-        android:onClick="readProdConfig"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="447dp" />
+        android:layout_marginBottom="@dimen/cs_space_2"
+        android:text="STREAMING" />
 
-    <Button
-        android:id="@+id/button8"
-        android:layout_width="200dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Read Op Config"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="447dp"
-        android:onClick="readOpConfig" />
+        android:orientation="vertical"
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_4"
+        android:layout_marginBottom="@dimen/cs_space_4">
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="200dp"
-        android:layout_height="wrap_content"
-        android:onClick="startSpeedTest"
-        android:text="Start Speed Test"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="447dp" />
+        <Button
+            android:id="@+id/button2"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:onClick="startStreaming"
+            android:text="Start Streaming" />
 
-    <Button
-        android:id="@+id/button4"
-        android:layout_width="205dp"
+        <Button
+            android:id="@+id/button3"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:onClick="stopStreaming"
+            android:text="Stop Streaming" />
+    </LinearLayout>
+
+    <TextView
+        style="@style/Widget.Consensys.SectionHeading"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="stopSpeedTest"
-        android:text="Stop Speed Test"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="447dp" />
+        android:layout_marginBottom="@dimen/cs_space_2"
+        android:text="TEST PARAMETERS" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_4">
+
+        <Button
+            android:id="@+id/button7"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:onClick="readProdConfig"
+            android:text="Read Prod Config" />
+
+        <Button
+            android:id="@+id/button8"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:onClick="readOpConfig"
+            android:text="Read Op Config" />
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:onClick="startSpeedTest"
+            android:text="Start Speed Test" />
+
+        <Button
+            android:id="@+id/button4"
+            android:layout_width="205dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:onClick="stopSpeedTest"
+            android:text="Stop Speed Test" />
+    </LinearLayout>
 
 </android.widget.LinearLayout>

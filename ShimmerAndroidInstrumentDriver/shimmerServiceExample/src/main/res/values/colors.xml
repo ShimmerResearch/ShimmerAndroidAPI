@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
-    <color name="list_item_title">#848484</color>
+    <color name="colorPrimary">#F15D22</color>
+    <color name="colorPrimaryDark">#BB5913</color>
+    <color name="colorAccent">#F15D22</color>
+    <color name="list_item_title">#484848</color>
     <color name="list_background">#FFFFFF</color>
-    <color name="list_background_pressed">#992416</color>
+    <color name="list_background_pressed">#F5F5F5</color>
     <color name="list_background_disabled">#D6D6D6</color>
-    <color name="list_divider">#272727</color>
-    <color name="counter_text_bg">#626262</color>
-    <color name="counter_text_color">#c5c4c4</color>
-    <color name="app_background_color">#EAEAEA</color>
-    <color name="dialog_background_color">#666666</color>
-    <color name="text_color">#848484</color>
-    <color name="text_color_light">#CECECE</color>
-    <color name="shimmer_blue">#3399FF</color>
-    <color name="shimmer_orange">#F5926B</color>
+    <color name="list_divider">#EAEAEA</color>
+    <color name="counter_text_bg">#E8E8E8</color>
+    <color name="counter_text_color">#484848</color>
+    <color name="app_background_color">#FFFFFF</color>
+    <color name="dialog_background_color">#FFFFFF</color>
+    <color name="text_color">#484848</color>
+    <color name="text_color_light">#808080</color>
+    <color name="shimmer_blue">#0081C6</color>
+    <color name="shimmer_orange">#F15D22</color>
     <color name="shimmer_grey">#969696</color>
     <color name="shimmer_grey_checkbox">#D1D0CE</color>
     <color name="red_circle">#FF0000</color>
     <color name="yellow_circle">#FFFF00</color>
     <color name="green_circle">#008000</color>
-    <color name="edit_text_color">#BEBEBE</color>
+    <color name="edit_text_color">#484848</color>
 
     <!-- list fo color for ploting signals -->
 

@@ -6,276 +6,293 @@
     android:layout_height="match_parent"
     tools:context="shimmerresearch.com.shimmerconnectiontest.MainActivity"
     android:orientation="vertical"
-    android:gravity="center">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="16dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-        <TextView
-            android:id="@+id/shimmerDeviceNameLabel"
-            android:layout_width="130dp"
-            android:layout_height="wrap_content"
-            android:text="Device Name"
-            android:textAlignment="center"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/androidDeviceModelLabel"
-            android:layout_width="170dp"
-            android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:text="Phone Model"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingTop="20dp"
-        android:orientation="horizontal">
-        <EditText
-            android:id="@+id/shimmerDeviceName"
-            android:layout_width="130dp"
-            android:layout_height="40dp"
-            android:inputType="none"
-            android:enabled="false"
-            android:textAlignment="center"
-            android:textSize="12dp" />
-        <EditText
-            android:id="@+id/androidDeviceModel"
-            android:layout_width="170dp"
-            android:layout_height="40dp"
-            android:inputType="none"
-            android:enabled="false"
-            android:textAlignment="center"
-            android:textSize="12dp" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="16dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-        <TextView
-            android:id="@+id/testIterationsLabel"
-            android:layout_width="90dp"
-            android:layout_height="wrap_content"
-            android:text="Test Iterations"
-            android:textAlignment="center"
-            android:textSize="10dp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/intervalLabel"
-            android:layout_width="120dp"
-            android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:text="BT Connection Attempt Interval(s)"
-            android:textSize="10dp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/retryCountLimitLabel"
-            android:layout_width="90dp"
-            android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:text="Retry Count Limit"
-            android:textSize="10dp"
-            android:textStyle="bold" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingTop="20dp"
-        android:orientation="horizontal">
-        <EditText
-            android:id="@+id/testIterations"
-            android:layout_width="90dp"
-            android:layout_height="40dp"
-            android:inputType="text"
-            android:textAlignment="center"
-            android:textSize="14dp" />
-        <EditText
-            android:id="@+id/interval"
-            android:layout_width="120dp"
-            android:layout_height="40dp"
-            android:inputType="text"
-            android:textAlignment="center"
-            android:textSize="14dp" />
-        <EditText
-            android:id="@+id/retryCountLimit"
-            android:layout_width="90dp"
-            android:layout_height="40dp"
-            android:inputType="text"
-            android:textAlignment="center"
-            android:textSize="14dp" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="30dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-        <TextView
-            android:id="@+id/statusLabel"
-            android:layout_width="110dp"
-            android:layout_height="wrap_content"
-            android:text="Shimmer Status"
-            android:textAlignment="center"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/retryCountLabel"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:text="Retry Count"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/firmwareLabel"
-            android:layout_width="110dp"
-            android:layout_height="wrap_content"
-            android:textAlignment="center"
-            android:text="Firmware"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingTop="20dp"
-        android:orientation="horizontal">
-        <EditText
-            android:id="@+id/shimmerStatus"
-            android:layout_width="110dp"
-            android:layout_height="40dp"
-            android:textAlignment="center"
-            android:enabled="false"
-            android:textSize="11dp" />
-        <EditText
-            android:id="@+id/retryCount"
-            android:layout_width="80dp"
-            android:layout_height="40dp"
-            android:textAlignment="center"
-            android:enabled="false"
-            android:textSize="14dp" />
-        <EditText
-            android:id="@+id/firmware"
-            android:layout_width="110dp"
-            android:layout_height="40dp"
-            android:textAlignment="center"
-            android:enabled="false"
-            android:textSize="10dp" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="30dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-        <TextView
-            android:id="@+id/testProgressLabel"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:text="Test Progress"
-            android:textAlignment="center"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/successLabel"
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:text="Success"
-            android:textAlignment="center"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/failLabel"
-            android:layout_width="60dp"
-            android:layout_height="wrap_content"
-            android:text="Fail"
-            android:textAlignment="center"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-        <TextView
-            android:id="@+id/totalRetriesLabel"
-            android:layout_width="80dp"
-            android:layout_height="wrap_content"
-            android:text="Total Retries"
-            android:textAlignment="center"
-            android:textSize="12dp"
-            android:textStyle="bold" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingTop="20dp"
-        android:paddingBottom="20dp"
-        android:orientation="horizontal">
+    android:padding="@dimen/cs_space_4">
 
-        <EditText
-            android:id="@+id/testProgress"
-            android:layout_width="100dp"
-            android:layout_height="40dp"
-            android:inputType="none"
-            android:textAlignment="center"
-            android:enabled="false"
-            android:text=""
-            android:textSize="14dp" />
+    <TextView
+        style="@style/Widget.Consensys.SectionHeading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/cs_space_2"
+        android:text="TEST PARAMETERS" />
 
-        <EditText
-            android:id="@+id/success"
-            android:layout_width="60dp"
-            android:layout_height="40dp"
-            android:inputType="none"
-            android:textAlignment="center"
-            android:enabled="false"
-            android:textSize="16dp" />
-        <EditText
-            android:id="@+id/fail"
-            android:layout_width="60dp"
-            android:layout_height="40dp"
-            android:inputType="none"
-            android:textAlignment="center"
-            android:enabled="false"
-            android:textSize="16dp" />
-        <EditText
-            android:id="@+id/totalRetries"
-            android:layout_width="80dp"
-            android:layout_height="40dp"
-            android:inputType="none"
-            android:textAlignment="center"
-            android:enabled="false"
-            android:textSize="16dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_4"
+        android:layout_marginBottom="@dimen/cs_space_4">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/testIterationsLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:text="Test Iterations"
+                android:textAlignment="center" />
+            <TextView
+                android:id="@+id/intervalLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="BT Connection Attempt Interval(s)" />
+            <TextView
+                android:id="@+id/retryCountLimitLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Retry Count Limit" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/testIterations"
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:textAlignment="center" />
+            <EditText
+                android:id="@+id/interval"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/cs_space_2"
+                android:inputType="text"
+                android:textAlignment="center" />
+            <EditText
+                android:id="@+id/retryCountLimit"
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/cs_space_2"
+                android:inputType="text"
+                android:textAlignment="center" />
+        </LinearLayout>
     </LinearLayout>
+
+    <TextView
+        style="@style/Widget.Consensys.SectionHeading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/cs_space_2"
+        android:text="TEST STATUS" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_4"
+        android:layout_marginBottom="@dimen/cs_space_4">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/shimmerDeviceNameLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="130dp"
+                android:layout_height="wrap_content"
+                android:text="Device Name"
+                android:textAlignment="center" />
+            <TextView
+                android:id="@+id/androidDeviceModelLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="170dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Phone Model" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/shimmerDeviceName"
+                android:layout_width="130dp"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:enabled="false"
+                android:textAlignment="center" />
+            <EditText
+                android:id="@+id/androidDeviceModel"
+                android:layout_width="170dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/cs_space_2"
+                android:inputType="none"
+                android:enabled="false"
+                android:textAlignment="center" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/cs_space_3"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/statusLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:text="Shimmer Status"
+                android:textAlignment="center" />
+            <TextView
+                android:id="@+id/retryCountLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Retry Count" />
+            <TextView
+                android:id="@+id/firmwareLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:text="Firmware" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/shimmerStatus"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:enabled="false" />
+            <EditText
+                android:id="@+id/retryCount"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/cs_space_2"
+                android:textAlignment="center"
+                android:enabled="false" />
+            <EditText
+                android:id="@+id/firmware"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/cs_space_2"
+                android:textAlignment="center"
+                android:enabled="false" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/cs_space_3"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/testProgressLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:text="Test Progress"
+                android:textAlignment="center" />
+            <TextView
+                android:id="@+id/successLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:text="Success"
+                android:textAlignment="center" />
+            <TextView
+                android:id="@+id/failLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:text="Fail"
+                android:textAlignment="center" />
+            <TextView
+                android:id="@+id/totalRetriesLabel"
+                style="@style/Widget.Consensys.FieldLabel"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:text="Total Retries"
+                android:textAlignment="center" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/cs_space_2"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/testProgress"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:textAlignment="center"
+                android:enabled="false"
+                android:text="" />
+
+            <EditText
+                android:id="@+id/success"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/cs_space_2"
+                android:inputType="none"
+                android:textAlignment="center"
+                android:enabled="false" />
+            <EditText
+                android:id="@+id/fail"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/cs_space_2"
+                android:inputType="none"
+                android:textAlignment="center"
+                android:enabled="false" />
+            <EditText
+                android:id="@+id/totalRetries"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/cs_space_2"
+                android:inputType="none"
+                android:textAlignment="center"
+                android:enabled="false" />
+        </LinearLayout>
+    </LinearLayout>
+
     <Button
         android:id="@+id/button50"
+        style="@style/Widget.Consensys.Button.Accent"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:text="Start Test"
-        android:onClick="startTest"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="447dp" />
+        android:onClick="startTest" />
     <Button
         android:id="@+id/button60"
         android:layout_width="200dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/cs_space_2"
         android:text="Stop Test"
-        android:onClick="stopTest"
-        tools:layout_editor_absoluteX="133dp"
-        tools:layout_editor_absoluteY="447dp" />
+        android:onClick="stopTest" />
 
     <TextView
         android:id="@+id/version"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:paddingTop="30dp"
+        android:layout_marginTop="@dimen/cs_space_4"
         android:text="Shimmer3 BT Connection Test v0.00.005"
         android:textAlignment="center"
-        android:textSize="10dp" />
+        android:textSize="13sp"
+        android:textColor="@color/cs_text" />
 </android.widget.LinearLayout>

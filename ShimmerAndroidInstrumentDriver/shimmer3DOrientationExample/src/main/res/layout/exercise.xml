@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout 
-    android:id="@+id/graphics_frameLayout1" 
-    android:layout_width="fill_parent" 
-    xmlns:android="http://schemas.android.com/apk/res/android" 
+<FrameLayout
+    android:id="@+id/graphics_frameLayout1"
+    android:layout_width="fill_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_height="fill_parent">
 
     <android.opengl.GLSurfaceView
-        android:id="@+id/graphics_glsurfaceview1" 
-        android:layout_width="fill_parent" 
+        android:id="@+id/graphics_glsurfaceview1"
+        android:layout_width="fill_parent"
         android:layout_height="fill_parent">
     </android.opengl.GLSurfaceView>
-    
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical" >
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/cs_panel_bg"
+        android:padding="@dimen/cs_space_3" >
 
 	 <LinearLayout
 	     android:layout_width="match_parent"
@@ -40,6 +42,7 @@
 
             <TextView
                 android:id="@+id/textView1"
+                style="@style/Widget.Consensys.FieldLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -47,6 +50,7 @@
 
             <TextView
                 android:id="@+id/textView2"
+                style="@style/Widget.Consensys.FieldLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -54,6 +58,7 @@
 
             <TextView
                 android:id="@+id/textView3"
+                style="@style/Widget.Consensys.FieldLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -61,12 +66,13 @@
 
             <TextView
                 android:id="@+id/textView4"
+                style="@style/Widget.Consensys.FieldLabel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Q4" />
         </LinearLayout>
-        
+
                 <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content" >
@@ -76,6 +82,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textColor="@color/cs_text_strong"
+                android:textSize="@dimen/cs_text_sm"
                 android:text="Q1" />
 
             <TextView
@@ -83,6 +91,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textColor="@color/cs_text_strong"
+                android:textSize="@dimen/cs_text_sm"
                 android:text="Q2" />
 
             <TextView
@@ -90,6 +100,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textColor="@color/cs_text_strong"
+                android:textSize="@dimen/cs_text_sm"
                 android:text="Q3" />
 
             <TextView
@@ -97,10 +109,12 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textColor="@color/cs_text_strong"
+                android:textSize="@dimen/cs_text_sm"
                 android:text="Q4" />
         </LinearLayout>
-        
-        
+
+
     </LinearLayout>
 
 </FrameLayout>

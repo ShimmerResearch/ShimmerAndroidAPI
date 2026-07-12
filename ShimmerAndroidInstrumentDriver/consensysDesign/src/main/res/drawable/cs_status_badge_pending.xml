@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pending: #F5F5F5 fill with a dashed 1dp #A0A0A0 border. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/cs_surface_alt" />
+    <stroke
+        android:width="@dimen/cs_hairline"
+        android:color="@color/cs_border_strong"
+        android:dashWidth="3dp"
+        android:dashGap="2dp" />
+    <corners android:radius="@dimen/cs_radius" />
+</shape>

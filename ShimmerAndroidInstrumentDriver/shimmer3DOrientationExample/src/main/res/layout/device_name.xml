@@ -16,6 +16,10 @@
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textSize="18sp"
-    android:padding="5dp"
+    android:textSize="@dimen/cs_text_sm"
+    android:textColor="@color/cs_text_strong"
+    android:paddingLeft="@dimen/cs_cell_pad_h"
+    android:paddingRight="@dimen/cs_cell_pad_h"
+    android:paddingTop="@dimen/cs_cell_pad_v"
+    android:paddingBottom="@dimen/cs_cell_pad_v"
 />

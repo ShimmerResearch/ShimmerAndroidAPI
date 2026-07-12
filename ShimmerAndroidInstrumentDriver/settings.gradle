@@ -5,3 +5,4 @@ include ':shimmer3DOrientationExample', ':shimmerConnectionTest'
 //project (":ShimmerAdvanceLibrary").projectDir = new File("../../ShimmerAdvanceAPI/ShimmerAdvanceLibrary")
 include ':multiverisenseblebasicexample' , ':shimmer3BLEBasicExample'
 include ':shimmerspeedtest'
+include ':consensysDesign'

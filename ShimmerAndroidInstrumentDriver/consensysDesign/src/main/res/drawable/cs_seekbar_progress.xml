@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- remaining track: 4dp grey, rounded caps -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <size android:height="@dimen/cs_seekbar_track" />
+            <solid android:color="@color/cs_grey_300" />
+            <corners android:radius="@dimen/cs_radius" />
+        </shape>
+    </item>
+    <!-- played track: orange fill -->
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape android:shape="rectangle">
+                <size android:height="@dimen/cs_seekbar_track" />
+                <solid android:color="@color/cs_orange" />
+                <corners android:radius="@dimen/cs_radius" />
+            </shape>
+        </clip>
+    </item>
+</layer-list>

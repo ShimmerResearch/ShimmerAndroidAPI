@@ -1,19 +1,14 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.ShimmerAndroidInstrumentDriver" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryDark">@color/purple_700</item>
-        <item name="colorAccent">@color/teal_200</item>
-        <!-- Customize your theme here. -->
+    <!-- Base application theme: Consensys design system (light-only). -->
+    <style name="Theme.ShimmerAndroidInstrumentDriver" parent="Theme.Consensys">
     </style>
 
-    <style name="Theme.ShimmerAndroidInstrumentDriver.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+    <style name="Theme.ShimmerAndroidInstrumentDriver.NoActionBar" parent="Theme.Consensys.NoActionBar">
     </style>
 
-    <style name="Theme.ShimmerAndroidInstrumentDriver.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <!-- Light overlay: Consensys toolbar is white with dark grey text, so the
+         Dark ActionBar overlay (white-on-white) would be unreadable here. -->
+    <style name="Theme.ShimmerAndroidInstrumentDriver.AppBarOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="Theme.ShimmerAndroidInstrumentDriver.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

@@ -51,6 +51,7 @@ android {
 }
 
 dependencies {
+    implementation project(':consensysDesign')
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(path: ':ShimmerAndroidInstrumentDriver')
 
