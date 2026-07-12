@@ -56,8 +56,8 @@ public class Shimmer3BLEAndroid extends ShimmerBluetooth implements Serializable
     final String TxID_Shimmer3 = "49535343-8841-43f4-a8d4-ecbe34729bb3";
     final String RxID_Shimmer3 = "49535343-1e4d-4bd9-ba61-23c647249616";
     final String ServiceID_Shimmer3 = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
-    final String TxID_Shimmer3R = "65333333-A115-11E2-9E9A-0800200CA101";
-    final String RxID_Shimmer3R = "65333333-A115-11E2-9E9A-0800200CA102";
+    final String TxID_Shimmer3R = "65333333-A115-11E2-9E9A-0800200CA102";
+    final String RxID_Shimmer3R = "65333333-A115-11E2-9E9A-0800200CA101";
     final String ServiceID_Shimmer3R = "65333333-A115-11E2-9E9A-0800200CA100";
     String TxID = "";
     String RxID = "";
@@ -73,16 +73,6 @@ public class Shimmer3BLEAndroid extends ShimmerBluetooth implements Serializable
 
     //"DA:A6:19:F0:4A:D7"
     //"E7:45:2C:6D:6F:14"
-
-    /**
-     * Initialize a ble radio
-     *
-     * @param mac mac address of the Shimmer3 BLE device e.g. d0:2b:46:3d:a2:bb
-     */
-    public Shimmer3BLEAndroid(String mac) {
-        mMyBluetoothAddress = mac;
-        mHandler = null;
-    }
 
     /** Only support Shimmer3 and Shimmer3R
      *
@@ -126,7 +116,8 @@ public class Shimmer3BLEAndroid extends ShimmerBluetooth implements Serializable
 
             @Override
             public void onConnectFail(BleDevice bleDevice, BleException exception) {
-
+                mTaskConnect.setResult("Connection Failed");
+                sendCallBackMsg(ShimmerBluetooth.MSG_IDENTIFIER_STATE_CHANGE, new ObjectCluster("", mMyBluetoothAddress, BT_STATE.CONNECTION_FAILED));
             }
 
             @Override
@@ -137,7 +128,7 @@ public class Shimmer3BLEAndroid extends ShimmerBluetooth implements Serializable
                     @Override
                     public void onSetMTUFailure(BleException exception) {
                         System.out.println("MTU Failure");
-
+                        mTaskMTU.setResult("MTU Failure");
                     }
 
                     @Override
@@ -183,14 +174,12 @@ public class Shimmer3BLEAndroid extends ShimmerBluetooth implements Serializable
 
             @Override
             public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
-                //mHandler.obtainMessage(ShimmerBluetooth.MSG_IDENTIFIER_STATE_CHANGE, -1, -1,
-                        //new ObjectCluster("", bleDevice.getMac(), BT_STATE.DISCONNECTED)).sendToTarget();
+                closeConnection();
                 sendCallBackMsg(ShimmerBluetooth.MSG_IDENTIFIER_STATE_CHANGE, new ObjectCluster("", bleDevice.getMac(), BT_STATE.DISCONNECTED));
 
                 Bundle bundle = new Bundle();
                 bundle.putString(TOAST, "Device connection was lost");
                 sendMsgToHandlerList(MESSAGE_TOAST, bundle);
-                System.out.println();
             }
         });
 
@@ -515,9 +504,8 @@ public class Shimmer3BLEAndroid extends ShimmerBluetooth implements Serializable
         stopAllTimers();
         BleManager.getInstance().disconnect(mBleDevice);
         closeConnection();
-        setBluetoothRadioState(BT_STATE.DISCONNECTED);
         Bundle bundle = new Bundle();
-        bundle.putString(TOAST, "Device connection was lost");
+        bundle.putString(TOAST, "Device disconnected");
         sendMsgToHandlerList(MESSAGE_TOAST, bundle);
     }
     private void sendMsgToHandlerList(int obtainMessage, Bundle bundle) {
@@ -532,17 +520,18 @@ public class Shimmer3BLEAndroid extends ShimmerBluetooth implements Serializable
         try {
             if (mIOThread != null) {
                 mIOThread.stop = true;
-
-                // Closing serial port before before thread is finished stopping throws an error so waiting here
-                while (mIOThread != null && mIOThread.isAlive()) ;
+                mIOThread.interrupt();
+                mIOThread.join(1000);
 
                 mIOThread = null;
 
-                if (mUseProcessingThread) {
+                if (mUseProcessingThread && mPThread != null) {
                     mPThread.stop = true;
+                    mPThread.interrupt();
                     mPThread = null;
                 }
             }
+            mBuffer = null;
             mIsStreaming = false;
             mIsInitialised = false;
 

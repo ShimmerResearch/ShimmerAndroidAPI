@@ -66,14 +66,19 @@ public class VerisenseProtocolByteCommunicationAndroid extends VerisenseProtocol
         if (PreviouslyWrittenPayloadIndex != verisenseMessage.payloadIndex) {
             try {
                 DocumentFile pickedDir = DocumentFile.fromTreeUri(mContext, mTreeURI);
-                DocumentFile[] arrDF = pickedDir.listFiles();
-                for (DocumentFile file:arrDF) {
-                    System.out.println(file.getName());
+                if (pickedDir == null) {
+                    System.out.println("WritePayloadToBinFile: unable to resolve tree Uri " + mTreeURI);
+                    return;
                 }
+
                 //trial name
                 DocumentFile dfT = pickedDir.findFile(getTrialName());
                 if (dfT==null){
                     dfT = pickedDir.createDirectory(getTrialName());
+                }
+                if (dfT == null) {
+                    System.out.println("WritePayloadToBinFile: unable to create trial directory " + getTrialName());
+                    return;
                 }
 
                 //participant name
@@ -81,11 +86,19 @@ public class VerisenseProtocolByteCommunicationAndroid extends VerisenseProtocol
                 if(dfP==null) {
                     dfP = dfT.createDirectory(getParticipantID());
                 }
+                if (dfP == null) {
+                    System.out.println("WritePayloadToBinFile: unable to create participant directory " + getParticipantID());
+                    return;
+                }
 
                 //uuid
                 DocumentFile dfUUID = dfP.findFile(mByteCommunication.getUuid());
                 if(dfUUID==null) {
                     dfUUID = dfP.createDirectory(mByteCommunication.getUuid());
+                }
+                if (dfUUID == null) {
+                    System.out.println("WritePayloadToBinFile: unable to create uuid directory " + mByteCommunication.getUuid());
+                    return;
                 }
 
                 //BinaryFiles
@@ -93,18 +106,24 @@ public class VerisenseProtocolByteCommunicationAndroid extends VerisenseProtocol
                 if(dfBF==null) {
                     dfBF = dfUUID.createDirectory("BinaryFiles");
                 }
+                if (dfBF == null) {
+                    System.out.println("WritePayloadToBinFile: unable to create BinaryFiles directory in " + mByteCommunication.getUuid());
+                    return;
+                }
 
                 DocumentFile newFile = dfBF.findFile(dataFileName);
                 if (newFile == null) {
                     newFile = dfBF.createFile("application/bin", dataFileName);
+                    if (newFile == null) {
+                        System.out.println("WritePayloadToBinFile: unable to create file " + dataFileName);
+                        return;
+                    }
                     dataFilePath = new FileUtils(mContext).getPath(newFile.getUri(), FileUtils.UriType.FILE);
                 }
-                if (newFile != null) {
-                    ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(newFile.getUri(), "wa"); // "w" for write, "a" for append
-                    FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor());
+                try (ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(newFile.getUri(), "wa"); // "w" for write, "a" for append
+                     FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor())) {
                     fos.write(verisenseMessage.payloadBytes);
                     fos.flush();
-                    fos.close();
                 }
 
                 /*

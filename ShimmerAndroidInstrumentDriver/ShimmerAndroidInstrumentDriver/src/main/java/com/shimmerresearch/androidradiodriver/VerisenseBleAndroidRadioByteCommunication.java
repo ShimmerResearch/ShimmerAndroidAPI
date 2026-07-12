@@ -84,7 +84,7 @@ public class VerisenseBleAndroidRadioByteCommunication extends AbstractByteCommu
                     @Override
                     public void onSetMTUFailure(BleException exception) {
                         System.out.println("MTU Failure");
-
+                        mTaskMTU.setResult("MTU Failure");
                     }
 
                     @Override
@@ -103,11 +103,11 @@ public class VerisenseBleAndroidRadioByteCommunication extends AbstractByteCommu
                     gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
                 }
 
+                mBleDevice = bleDevice;
+                startServiceS(bleDevice);
                 if (mByteCommunicationListener != null) {
                     mByteCommunicationListener.eventConnected();
                 }
-                mBleDevice = bleDevice;
-                startServiceS(bleDevice);
                 System.out.println(bleDevice.getMac() + " Connected");
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     gatt.setPreferredPhy(BluetoothDevice.PHY_LE_2M_MASK, BluetoothDevice.PHY_LE_2M_MASK, BluetoothDevice.PHY_OPTION_NO_PREFERRED);
@@ -117,7 +117,9 @@ public class VerisenseBleAndroidRadioByteCommunication extends AbstractByteCommu
 
             @Override
             public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
-                System.out.println();
+                if (mByteCommunicationListener != null) {
+                    mByteCommunicationListener.eventDisconnected();
+                }
             }
         });
 
@@ -208,7 +210,9 @@ public class VerisenseBleAndroidRadioByteCommunication extends AbstractByteCommu
      */
     @Override
     public void disconnect() {
-        BleManager.getInstance().disconnect(mBleDevice);
+        if (mBleDevice != null) {
+            BleManager.getInstance().disconnect(mBleDevice);
+        }
     }
 
     /**
@@ -217,6 +221,9 @@ public class VerisenseBleAndroidRadioByteCommunication extends AbstractByteCommu
      */
     @Override
     public void writeBytes(byte[] bytes) {
+        if (mBleDevice == null) {
+            return;
+        }
         BleManager.getInstance().write(mBleDevice, sid.toString(), txid.toString(), bytes, false, new BleWriteCallback() {
             @Override
             public void onWriteSuccess(int current, int total, byte[] justWrite) {

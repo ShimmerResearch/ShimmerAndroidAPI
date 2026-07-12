@@ -16,7 +16,9 @@ public class Shimmer4Android extends Shimmer4sdk {
 
     @Override
     public void sendCallBackMsg(int msgid,Object obj){
-        mHandler.obtainMessage(msgid, obj).sendToTarget();
+        if (mHandler != null) {
+            mHandler.obtainMessage(msgid, obj).sendToTarget();
+        }
     }
 
     public Shimmer4Android(Handler handler){

@@ -45,7 +45,7 @@ public class VerisenseDeviceAndroid extends VerisenseDevice {
     @Override
     public void sendCallBackMsg(int i, Object ojc){
         super.sendCallBackMsg(i, ojc);
-        if(i == ShimmerBluetooth.MSG_IDENTIFIER_STATE_CHANGE){
+        if(i == ShimmerBluetooth.MSG_IDENTIFIER_STATE_CHANGE && ojc instanceof CallbackObject){
             sendMsgToHandlerListTarget(i, -1, -1,
                     new ObjectCluster(mShimmerUserAssignedName, getMacId(), ((CallbackObject)ojc).mState));
         }
