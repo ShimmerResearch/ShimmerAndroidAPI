@@ -88,7 +88,7 @@ public class MultitouchPlot extends XYPlot implements OnTouchListener
 
 			if(minYSeriesValue == null || minYSeriesValue.doubleValue() > series.getY(i).doubleValue())
 				minYSeriesValue = series.getY(i);
-			if(maxYSeriesValue == null || maxYSeriesValue.doubleValue() < series.getX(i).doubleValue())
+			if(maxYSeriesValue == null || maxYSeriesValue.doubleValue() < series.getY(i).doubleValue())
 				maxYSeriesValue = series.getY(i);
 		}
 		return super.addSeries(series, formatter);
@@ -107,10 +107,12 @@ public class MultitouchPlot extends XYPlot implements OnTouchListener
 
 			case MotionEvent.ACTION_POINTER_DOWN: //second finger
 			{
-				distBetweenFingers = distance(motionEvent);
-				// the distance check is done to avoid false alarms
-				if (distBetweenFingers > 5f || distBetweenFingers < -5f)
-					mode = TWO_FINGERS_DRAG;
+				if (motionEvent.getPointerCount() >= 2) {
+					distBetweenFingers = distance(motionEvent);
+					// the distance check is done to avoid false alarms
+					if (distBetweenFingers > 5f || distBetweenFingers < -5f)
+						mode = TWO_FINGERS_DRAG;
+				}
 				break;
 			}
 
@@ -137,6 +139,11 @@ public class MultitouchPlot extends XYPlot implements OnTouchListener
 				}
 				else if(mode == TWO_FINGERS_DRAG)
 				{
+					if (motionEvent.getPointerCount() < 2)
+					{
+						break;
+					}
+
 					calculateMinMaxVals();
 
 					final float oldDist = distBetweenFingers;

@@ -15,6 +15,7 @@ import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 
@@ -62,7 +63,7 @@ public class FileUtils {
                     fullPath = copyFileToInternalStorage(uri, FALLBACK_COPY_FOLDER);
                 }
 
-                if (fullPath != "") {
+                if (fullPath != null && !fullPath.isEmpty()) {
                     return fullPath;
                 } else {
                     return null;
@@ -273,20 +274,31 @@ public class FileUtils {
     private String getDriveFilePath(Uri uri) {
         Uri returnUri = uri;
         Cursor returnCursor = context.getContentResolver().query(returnUri, null, null, null, null);
+        if (returnCursor == null) {
+            Log.e(TAG, "Unable to query drive file " + uri);
+            return null;
+        }
         /*
          * Get the column indexes of the data in the Cursor,
          *     * move to the first row in the Cursor, get the data,
          *     * and display it.
          * */
-        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-        int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
-        returnCursor.moveToFirst();
-        String name = (returnCursor.getString(nameIndex));
-        String size = (Long.toString(returnCursor.getLong(sizeIndex)));
-        File file = new File(context.getCacheDir(), name);
+        String name;
         try {
-            InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            FileOutputStream outputStream = new FileOutputStream(file);
+            int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
+            returnCursor.moveToFirst();
+            name = (returnCursor.getString(nameIndex));
+            String size = (Long.toString(returnCursor.getLong(sizeIndex)));
+        } finally {
+            returnCursor.close();
+        }
+        File file = new File(context.getCacheDir(), name);
+        InputStream inputStream = null;
+        FileOutputStream outputStream = null;
+        try {
+            inputStream = context.getContentResolver().openInputStream(uri);
+            outputStream = new FileOutputStream(file);
             int read = 0;
             int maxBufferSize = 1 * 1024 * 1024;
             int bytesAvailable = inputStream.available();
@@ -298,13 +310,24 @@ public class FileUtils {
             while ((read = inputStream.read(buffers)) != -1) {
                 outputStream.write(buffers, 0, read);
             }
-            Log.e(TAG, "Size " + file.length());
-            inputStream.close();
-            outputStream.close();
-            Log.e(TAG, "Path " + file.getPath());
-            Log.e(TAG, "Size " + file.length());
+            Log.e(TAG, "Path " + file.getPath() + " Size " + file.length());
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, "Error copying drive file " + uri, e);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Error closing input stream", e);
+                }
+            }
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Error closing output stream", e);
+                }
+            }
         }
 
         return file.getPath();
@@ -323,17 +346,26 @@ public class FileUtils {
                 OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE
         }, null, null, null);
 
+        if (returnCursor == null) {
+            Log.e(TAG, "Unable to query file " + uri);
+            return null;
+        }
 
         /*
          * Get the column indexes of the data in the Cursor,
          *     * move to the first row in the Cursor, get the data,
          *     * and display it.
          * */
-        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-        int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
-        returnCursor.moveToFirst();
-        String name = (returnCursor.getString(nameIndex));
-        String size = (Long.toString(returnCursor.getLong(sizeIndex)));
+        String name;
+        try {
+            int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
+            returnCursor.moveToFirst();
+            name = (returnCursor.getString(nameIndex));
+            String size = (Long.toString(returnCursor.getLong(sizeIndex)));
+        } finally {
+            returnCursor.close();
+        }
 
         File output;
         if (!newDirName.equals("")) {
@@ -348,9 +380,11 @@ public class FileUtils {
             output = new File(context.getFilesDir() + File.separator + name);
         }
 
+        InputStream inputStream = null;
+        FileOutputStream outputStream = null;
         try {
-            InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            FileOutputStream outputStream = new FileOutputStream(output);
+            inputStream = context.getContentResolver().openInputStream(uri);
+            outputStream = new FileOutputStream(output);
             int read = 0;
             int bufferSize = 1024;
             final byte[] buffers = new byte[bufferSize];
@@ -358,11 +392,23 @@ public class FileUtils {
             while ((read = inputStream.read(buffers)) != -1) {
                 outputStream.write(buffers, 0, read);
             }
-
-            inputStream.close();
-            outputStream.close();
         } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, "Error copying file " + uri + " to internal storage", e);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Error closing input stream", e);
+                }
+            }
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Error closing output stream", e);
+                }
+            }
         }
 
         return output.getPath();

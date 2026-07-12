@@ -62,6 +62,7 @@ import com.shimmerresearch.driver.ObjectCluster;
 
 
 public class Logging {
+	private static final String TAG = "Logging";
 	boolean mFirstWrite=true;
 	String[] mSensorNames;
 	String[] mSensorFormats;
@@ -71,10 +72,12 @@ public class Logging {
 	File outputFile;
 	String mDelimiter=","; //default is comma
 
-	@Deprecated
 	/**
 	 * @param myName is the file name which will be used
+	 * @deprecated Relies on legacy external storage access which does not work on Android 10+ (scoped storage).
+	 * Use {@link #Logging(Uri, Context, String, String, String, ShimmerService.FILE_TYPE)} instead.
 	 */
+	@Deprecated
 	public Logging(String myName){
 		mFileName=myName;
 		File root = Environment.getExternalStorageDirectory();
@@ -82,6 +85,10 @@ public class Logging {
 		outputFile = new File(root, mFileName+".dat");
 	}
 
+	/**
+	 * @deprecated Relies on legacy external storage access which does not work on Android 10+ (scoped storage).
+	 * Use {@link #Logging(Uri, Context, String, String, String, ShimmerService.FILE_TYPE)} instead.
+	 */
 	@Deprecated
 	public Logging(String myName, String delimiter){
 		mFileName=myName;
@@ -91,31 +98,37 @@ public class Logging {
 		outputFile = new File(root, mFileName+".dat");
 	}
 
-	@Deprecated
 	/**
 	 * Constructor with default file output type (.dat)
 	 * @param myName
 	 * @param delimiter
 	 * @param folderName will create a new folder if it does not exist
+	 * @deprecated Relies on legacy external storage access which does not work on Android 10+ (scoped storage).
+	 * Use {@link #Logging(Uri, Context, String, String, String, ShimmerService.FILE_TYPE)} instead.
 	 */
+	@Deprecated
 	public Logging(String myName,String delimiter, String folderName){
 		mFileName=myName;
 		mDelimiter=delimiter;
 		 File root = new File(Environment.getExternalStorageDirectory() + "/"+folderName);
 		   if(!root.exists()) {
-		        if(root.mkdir()); //directory is created;
+		        if(!root.mkdirs()) {
+		        	Log.e(TAG, "Failed to create directory: " + root.getAbsolutePath());
+		        }
 		    }
 		outputFile = new File(root, mFileName+ "." + ShimmerService.FILE_TYPE.DAT.getName());
 	}
 
-	@Deprecated
 	/**
 	 * Constructor to select output file type
 	 * @param myName
 	 * @param delimiter
 	 * @param folderName will create a new folder if it does not exist
 	 * @param fileType File output type. Currently supports .dat or .csv
+	 * @deprecated Relies on legacy external storage access which does not work on Android 10+ (scoped storage).
+	 * Use {@link #Logging(Uri, Context, String, String, String, ShimmerService.FILE_TYPE)} instead.
 	 */
+	@Deprecated
 	public Logging(String myName, String delimiter, String folderName, ShimmerService.FILE_TYPE fileType) {
 		mFileName=myName;
 		mDelimiter=delimiter;
@@ -127,10 +140,8 @@ public class Logging {
 		}
 
 		if(!root.exists()) {
-			if(root.mkdir()){
-				System.out.println();//directory is created;
-			} else {
-
+			if(!root.mkdirs()) {
+				Log.e(TAG, "Failed to create directory: " + root.getAbsolutePath());
 			}
 		}
 		outputFile = new File(root, mFileName + "." + fileType.getName());
@@ -238,18 +249,18 @@ public class Logging {
 			
 			//now write data
 			for (int r=0;r<mSensorNames.length;r++) {
-				Collection<FormatCluster> dataFormats = objectClusterLog.getCollectionOfFormatClusters(mSensorNames[r]);  
+				Collection<FormatCluster> dataFormats = objectClusterLog.getCollectionOfFormatClusters(mSensorNames[r]);
 				FormatCluster formatCluster = (FormatCluster) returnFormatCluster(dataFormats,mSensorFormats[r],mSensorUnits[r]);  // retrieve the calibrated data
 //				Log.d("Shimmer","Data : " +mSensorNames[r] + formatCluster.mData + " "+ formatCluster.mUnits);
-				writer.write(Double.toString(formatCluster.mData));
+				if (formatCluster != null) {
+					writer.write(Double.toString(formatCluster.mData));
+				}
             	writer.write(mDelimiter);
 			}
 			writer.newLine();
 		}
-	catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-		Log.d("Shimmer","Error with bufferedwriter");
+	catch (Exception e) {
+		Log.e(TAG, "Error writing log data", e);
 	}
 	}
 	
@@ -258,8 +269,7 @@ public class Logging {
 			try {
 				writer.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Log.e(TAG, "Error closing log file", e);
 			}
 		}
 	}
@@ -283,10 +293,10 @@ public class Logging {
 		boolean uniqueString=true;
 		int size = stringArray.length;
 		for (int i=0;i<size;i++){
-			if (stringArray[i]==string){
+			if (stringArray[i]!=null && stringArray[i].equals(string)){
 				uniqueString=false;
-			}	
-					
+			}
+
 		}
 		return uniqueString;
 	}
@@ -298,7 +308,8 @@ public class Logging {
 	    	
 	    	while(iFormatCluster.hasNext()){
 	    		formatCluster=(FormatCluster)iFormatCluster.next();
-	    		if (formatCluster.mFormat==format && formatCluster.mUnits==units){
+	    		if (formatCluster.mFormat!=null && formatCluster.mFormat.equals(format)
+	    				&& formatCluster.mUnits!=null && formatCluster.mUnits.equals(units)){
 	    			returnFormatCluster=formatCluster;
 	    		}
 	    	}

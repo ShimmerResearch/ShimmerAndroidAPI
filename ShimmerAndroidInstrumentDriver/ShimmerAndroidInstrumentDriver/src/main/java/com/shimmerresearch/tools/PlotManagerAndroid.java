@@ -23,7 +23,7 @@ import pl.flex_it.androidplot.XYSeriesShimmer;
 
 public class PlotManagerAndroid extends AbstractPlotManager {
 	
-	public static List<XYSeriesShimmer> mListofSeries = new ArrayList<XYSeriesShimmer>();
+	public List<XYSeriesShimmer> mListofSeries = new ArrayList<XYSeriesShimmer>();
 	int mNumberOfRowPropertiestoCheck = 3;
 	XYPlot mDynamicPlot = null;
 	int mXAxisLimit = 500;
@@ -228,22 +228,30 @@ public class PlotManagerAndroid extends AbstractPlotManager {
 	 * @param signal
 	 */
 	public void removeSignal(String[] signal){
+		ArrayList<Integer> listOfIndex = new ArrayList<Integer>();
 		for (int i=0;i<mListofPropertiestoPlot.size();i++){
 			String[] prop = mListofPropertiestoPlot.get(i);
 			boolean found = true;
 			for (int p=0;p<mNumberOfRowPropertiestoCheck;p++){
 				if (prop[p].equals(signal[p])){
-					
+
 				} else {
 					found = false;
 				}
 			}
 			if (found){
-				mDynamicPlot.removeSeries(mListofSeries.get(i));
-				mListofSeries.remove(i);
-				super.removeSignal(i);
+				listOfIndex.add(i);
 			}
-			
+
+		}
+
+		for (int j=listOfIndex.size()-1; j>=0; j--){
+			int index = listOfIndex.get(j);
+			if (mDynamicPlot!=null){
+				mDynamicPlot.removeSeries(mListofSeries.get(index));
+			}
+			mListofSeries.remove(index);
+			super.removeSignal(index);
 		}
 	}
 	
@@ -265,10 +273,12 @@ public class PlotManagerAndroid extends AbstractPlotManager {
 		
 		
 		for(int j=listOfIndex.size()-1; j>=0; j--){
-			mDynamicPlot.removeSeries(mListofSeries.get(listOfIndex.get(j)));
+			if (mDynamicPlot!=null){
+				mDynamicPlot.removeSeries(mListofSeries.get(listOfIndex.get(j)));
+			}
 //			mListofSeries.remove(listOfIndex.get(j));
 //			super.removeSignal(listOfIndex.get(j));
-		}		
+		}
 		mListofSeries.removeAll(tempListOfSeries);
 		super.removeCollectionOfSignal(propertiesToRemove, tempListOfColors);
 			

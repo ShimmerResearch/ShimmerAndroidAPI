@@ -75,7 +75,7 @@ public class XYSeriesShimmer implements XYSeries {
 
     @Override
     public Number getY(int index) {
-		synchronized (mDataY) {
+		synchronized (this) {
 			if (index < mDataY.size()) {
 				return mDataY.get(index);
 			} else {
@@ -102,13 +102,13 @@ public class XYSeriesShimmer implements XYSeries {
 	}
     
 	public void clearData(){
-		synchronized (mDataY) {
+		synchronized (this) {
 			mDataY.clear();
 		}
 	}
 	
     public void updateData(List<Number> datasource){
-		synchronized (mDataY) {
+		synchronized (this) {
 			this.mDataY = datasource;
 			if (mClearGraphatLimit) {
 				if (mDataY.size() >= mXAxisLimit) {
@@ -124,7 +124,7 @@ public class XYSeriesShimmer implements XYSeries {
     }
     
     public void addData(Number data){
-		synchronized (mDataY) {
+		synchronized (this) {
 			this.mDataY.add(data);
 			if (mClearGraphatLimit) {
 				if (mDataY.size() >= mXAxisLimit) {
