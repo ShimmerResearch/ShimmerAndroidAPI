@@ -147,6 +147,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
+
 import com.shimmerresearch.bluetooth.BluetoothProgressReportPerCmd;
 import com.shimmerresearch.bluetooth.ShimmerBluetooth;
 import com.shimmerresearch.driver.CallbackObject;
@@ -177,6 +179,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import it.gerdavax.easybluetooth.BtSocket;
 import it.gerdavax.easybluetooth.LocalDevice;
@@ -237,7 +240,8 @@ public class Shimmer extends ShimmerBluetooth{
 
 	private int mBluetoothLib=0;												// 0 = default lib, 1 = arduino lib
 	transient private BluetoothAdapter mBluetoothAdapter = null;
-	transient List<Handler> mHandlerList = new ArrayList<Handler>();
+	transient List<Handler> mHandlerList = new CopyOnWriteArrayList<Handler>();
+	private boolean mReceiverRegistered = false;
 	{
 		setEnableProcessMarker(false);
 	}
@@ -249,17 +253,18 @@ public class Shimmer extends ShimmerBluetooth{
 	}
 
 	protected  void unregisterDisconnectListener(){
-		if(mContext!=null) {
+		if(mContext!=null && mReceiverRegistered) {
 			try {
 				mContext.unregisterReceiver(mReceiver);
-			} catch (Exception ex){
+			} catch (IllegalArgumentException ex){
 				System.out.println(ex);
 			}
+			mReceiverRegistered = false;
 		}
 	}
 
 	protected  void registerDisconnectListener(){
-		if(mContext!=null) {
+		if(mContext!=null && !mReceiverRegistered) {
 			System.out.println("initialize process 0) register disconnect listener");
 			BluetoothAdapter bluetoothAdapter = null;
 			if (android.os.Build.VERSION.SDK_INT >= 18) {
@@ -270,7 +275,8 @@ public class Shimmer extends ShimmerBluetooth{
 			IntentFilter filter = new IntentFilter(bluetoothAdapter.ACTION_STATE_CHANGED);
 			filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
 			filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-			mContext.registerReceiver(mReceiver, filter);
+			ContextCompat.registerReceiver(mContext, mReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+			mReceiverRegistered = true;
 		}
 	}
 
@@ -316,7 +322,7 @@ public class Shimmer extends ShimmerBluetooth{
 		super();
 		mAdapter = BluetoothAdapter.getDefaultAdapter();
 		mBluetoothRadioState = BT_STATE.DISCONNECTED;
-		mHandlerList = handlerList;
+		mHandlerList = new CopyOnWriteArrayList<Handler>(handlerList);
 		mSetupDeviceWhileConnecting = false;
 		mUseProcessingThread = true;
 		mContext = context;
@@ -602,7 +608,7 @@ public class Shimmer extends ShimmerBluetooth{
 		getListofInstructions().clear();
 		mFirstTime=true;
 
-		if (bluetoothLibrary=="default"){
+		if ("default".equals(bluetoothLibrary)){
 			mMyBluetoothAddress=address;
 			mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 			BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
@@ -618,7 +624,7 @@ public class Shimmer extends ShimmerBluetooth{
 			mConnectThread = new ConnectThread(device);
 			mConnectThread.start();
 			setBluetoothRadioState(BT_STATE.CONNECTING);
-		} else if (bluetoothLibrary=="gerdavax"){
+		} else if ("gerdavax".equals(bluetoothLibrary)){
 			mMyBluetoothAddress=address;
 			// Cancel any thread attempting to make a connection
 			if (mBluetoothRadioState == BT_STATE.CONNECTING) {
@@ -705,14 +711,14 @@ public class Shimmer extends ShimmerBluetooth{
 		if (mIOThread != null) {
 			mIOThread.stop = true;
 			mIOThread = null;
-			if(mUseProcessingThread){ 
+			if(mUseProcessingThread && mPThread != null){
 				mPThread.stop =true;
 				mPThread = null;
 			}
-			
+
 		}
 		if (mConnectThread != null) {
-			mConnectThread.cancel(); 
+			mConnectThread.cancel();
 			mConnectThread = null;
 		}
 		if (mConnectedThread != null) {
@@ -1039,6 +1045,7 @@ public class Shimmer extends ShimmerBluetooth{
 		// Perform the write unsynchronized
 		r.write(out);
 		*/
+		if (mConnectedThread == null) return;
 		mConnectedThread.write(out);
 	}
 
@@ -1065,11 +1072,11 @@ public class Shimmer extends ShimmerBluetooth{
 		if (mIOThread != null) {
 			mIOThread.stop = true;
 			mIOThread = null;
-			if(mUseProcessingThread){
+			if(mUseProcessingThread && mPThread != null){
 			mPThread.stop =true;
 			mPThread = null;
 			}
-			
+
 		}
 		setBluetoothRadioState(BT_STATE.DISCONNECTED);
 		mIsInitialised = false;
@@ -1112,8 +1119,18 @@ public class Shimmer extends ShimmerBluetooth{
 			System.out.println("initialize process 1) start connecting thread");
 			setName("ConnectThread");
 
+			if (mmSocket == null) {
+				connectionFailed();
+				return;
+			}
+
 			// Always cancel discovery because it will slow down a connection
-			mAdapter.cancelDiscovery();
+			try {
+				mAdapter.cancelDiscovery();
+			} catch (SecurityException securityException) {
+				connectionFailed();
+				return;
+			}
 
 			try {
 				// Connect the device through the socket. This will block
@@ -1122,6 +1139,12 @@ public class Shimmer extends ShimmerBluetooth{
 			} catch (IOException connectException) {
 				connectionFailed();
 				// Unable to connect; close the socket and get out
+				try {
+					mmSocket.close();
+				} catch (IOException closeException) { }
+				return;
+			} catch (SecurityException securityException) {
+				connectionFailed();
 				try {
 					mmSocket.close();
 				} catch (IOException closeException) { }
@@ -1249,7 +1272,6 @@ public class Shimmer extends ShimmerBluetooth{
 //			mHandler.sendMessage(msg);
 			sendMsgToHandlerList(Shimmer.MESSAGE_DEVICE_NAME);
 			// Send the name of the connected device back to the UI Activity
-			while(!mIOThread.isAlive()){}; 
 			Log.d(mClassName, "alive!!");
 			//shimmer.setState(BT_STATE.CONNECTED);
 			//startStreaming();

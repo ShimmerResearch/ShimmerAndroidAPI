@@ -37,6 +37,8 @@ public class ShimmerSerialPortAndroid extends AbstractSerialPortHal {
     transient private OutputStream mOutStream;
     private transient SerialPortListener mShimmerSerialEventCallback;
     private boolean mUseListenerThread;
+    private volatile boolean mKeepListening;
+    private transient Thread mListeningThread;
 
     public ShimmerSerialPortAndroid(String bluetoothAddress){
         mBluetoothAddress = bluetoothAddress;
@@ -86,6 +88,8 @@ public class ShimmerSerialPortAndroid extends AbstractSerialPortHal {
             mBluetoothSocket = device.createRfcommSocketToServiceRecord(mSPP_UUID);// If your device fails to pair try: device.createInsecureRfcommSocketToServiceRecord(mSPP_UUID)
         } catch (IOException e) {
             catchException(e, ErrorCodesSerialPort.SHIMMERUART_COMM_ERR_PORT_EXCEPTON_OPENING);
+        } catch (SecurityException e) {
+            catchException(e, ErrorCodesSerialPort.SHIMMERUART_COMM_ERR_PORT_EXCEPTON_OPENING);
         }
     }
 
@@ -93,6 +97,9 @@ public class ShimmerSerialPortAndroid extends AbstractSerialPortHal {
         try {
             mBluetoothSocket.connect();
         } catch (IOException e) {
+            closeBluetoothSocket();
+            catchException(e, ErrorCodesSerialPort.SHIMMERUART_COMM_ERR_PORT_EXCEPTON_OPENING);
+        } catch (SecurityException e) {
             closeBluetoothSocket();
             catchException(e, ErrorCodesSerialPort.SHIMMERUART_COMM_ERR_PORT_EXCEPTON_OPENING);
         }
@@ -170,6 +177,11 @@ public class ShimmerSerialPortAndroid extends AbstractSerialPortHal {
     }
 
     private void closeBTConnection()  {
+        mKeepListening = false;
+        if (mListeningThread != null) {
+            mListeningThread.interrupt();
+            mListeningThread = null;
+        }
         closeInputStream();
         closeOutputStream();
         closeBluetoothSocket();
@@ -263,7 +275,7 @@ public class ShimmerSerialPortAndroid extends AbstractSerialPortHal {
 
     @Override
     public boolean isDisonnected() {
-        return false;
+        return !isConnected();
     }
 
     @Override
@@ -272,6 +284,7 @@ public class ShimmerSerialPortAndroid extends AbstractSerialPortHal {
     }
 
     private void catchException(Exception e, int errorCode)  {
+        Log.e("Shimmer", "Serial port error, code: " + errorCode, e);
         e.printStackTrace();
         eventDeviceDisconnected();
 
@@ -279,37 +292,38 @@ public class ShimmerSerialPortAndroid extends AbstractSerialPortHal {
 
 
     public void startListening() {
-        Thread thread = new Thread(new Runnable() {
+        mKeepListening = true;
+        mListeningThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    while (true) {
+                    while (mKeepListening) {
                         // Read data from the input stream
+                        InputStream inStream = mInStream;
+                        if (inStream == null) {
+                            break;
+                        }
 
-                        int availableBytes = mInStream.available();
+                        int availableBytes = inStream.available();
 
                         if (availableBytes < 1) {
-                            // End of stream
-
+                            // No data available, yield briefly before polling again
+                            Thread.sleep(5);
                         } else {
                             // Notify listeners with the read data
                             mShimmerSerialEventCallback.serialPortRxEvent(availableBytes);
                         }
-
-
                     }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } catch (IOException e) {
                     e.printStackTrace();
-                } finally {
-                    try {
-                        mInStream.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
                 }
             }
         });
-        thread.start();
+        mListeningThread.start();
     }
 
     public BluetoothSocket getBluetoothSocket(){
