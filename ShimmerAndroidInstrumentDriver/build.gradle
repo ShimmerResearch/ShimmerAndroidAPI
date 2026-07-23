@@ -28,7 +28,7 @@ allprojects {
         google()
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/ShimmerEngineering/Shimmer-Java-Android-API")
+            url = uri("https://maven.pkg.github.com/ShimmerResearch/Shimmer-Java-Android-API")
             credentials {
                 /* Create gradle.properties file in GRADLE_USER_HOME/.gradle/ 
                 (e.g. C:/Users/YourUsername/.gradle/) with the two lines listed below. Fill in your 
@@ -48,7 +48,7 @@ allprojects {
         }
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/ShimmerEngineering/ShimmerAndroidAPI")
+            url = uri("https://maven.pkg.github.com/ShimmerResearch/ShimmerAndroidAPI")
             credentials {
                 /* Create gradle.properties file in GRADLE_USER_HOME/.gradle/ 
                 (e.g. C:/Users/YourUsername/.gradle/) with the two lines listed below. Fill in your 
