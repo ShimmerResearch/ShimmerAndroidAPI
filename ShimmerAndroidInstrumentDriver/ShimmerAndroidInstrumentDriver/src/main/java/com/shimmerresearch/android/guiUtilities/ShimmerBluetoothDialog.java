@@ -17,6 +17,7 @@ package com.shimmerresearch.android.guiUtilities;
 
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -62,6 +63,7 @@ public class ShimmerBluetoothDialog extends Activity {
     // Return Intent extra
     public static String EXTRA_DEVICE_ADDRESS = "device_address";
     public static String EXTRA_DEVICE_NAME = "device_name";
+    private static final int REQUEST_BLUETOOTH_PERMISSIONS = 1001;
 
 
     // Member fields
@@ -72,6 +74,7 @@ public class ShimmerBluetoothDialog extends Activity {
     private Button scanButton;
 
     @Override
+    @SuppressLint("MissingPermission")
     protected void onCreate(Bundle savedInstanceState) {
         //Set Material Design if the device's OS is Android Lollipop or higher
         if (Build.VERSION.SDK_INT >= 21) {
@@ -126,21 +129,19 @@ public class ShimmerBluetoothDialog extends Activity {
         // Get the local Bluetooth adapter
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        // Get a set of currently paired devices
-        Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-
-        // If there are paired devices, add each one to the ArrayAdapter
-        if (pairedDevices.size() > 0) {
-            pairedListView.setEnabled(true);
-            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
-            for (BluetoothDevice device : pairedDevices) {
-                mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-            }
-        } else {
-            String noDevices = getResources().getText(R.string.none_paired).toString();
-            mPairedDevicesArrayAdapter.add(noDevices);
-            pairedListView.setEnabled(false);
+        if (mBtAdapter == null) {
+            Toast.makeText(this, "Bluetooth is not available on this device", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
         }
+
+        if (!hasBluetoothConnectPermission()) {
+            requestBluetoothPermissions();
+            showNoPermissionPairedState(pairedListView);
+            return;
+        }
+
+        populatePairedDevices(pairedListView);
     }
 
     @Override
@@ -148,7 +149,7 @@ public class ShimmerBluetoothDialog extends Activity {
         super.onDestroy();
 
         // Make sure we're not doing discovery anymore
-        if (mBtAdapter != null) {
+        if (mBtAdapter != null && hasBluetoothScanPermission()) {
             mBtAdapter.cancelDiscovery();
         }
 
@@ -159,6 +160,7 @@ public class ShimmerBluetoothDialog extends Activity {
     /**
      * Start device discover with the BluetoothAdapter
      */
+    @SuppressLint("MissingPermission")
     private void doDiscovery() {
         if (D) Log.d(TAG, "doDiscovery()");
 
@@ -171,17 +173,10 @@ public class ShimmerBluetoothDialog extends Activity {
         findViewById(R.id.layoutNewDevices).setVisibility(View.VISIBLE);
 
         // If we're already discovering, stop it
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return;
-            }
+        if (!hasBluetoothScanPermission()) {
+            requestBluetoothPermissions();
+            Toast.makeText(this, "Bluetooth permission required to scan devices", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         if (mBtAdapter.isDiscovering()) {
@@ -219,6 +214,7 @@ public class ShimmerBluetoothDialog extends Activity {
     // changes the title when discovery is finished
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
+        @SuppressLint("MissingPermission")
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
 
@@ -227,7 +223,7 @@ public class ShimmerBluetoothDialog extends Activity {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // If it's already paired, skip it, because it's been listed already
-                if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+                if (device != null && hasBluetoothConnectPermission() && device.getBondState() != BluetoothDevice.BOND_BONDED) {
                     mNewDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 }
             // When discovery is finished, change the Activity title
@@ -241,5 +237,68 @@ public class ShimmerBluetoothDialog extends Activity {
             }
         }
     };
+
+    private boolean hasBluetoothConnectPermission() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean hasBluetoothScanPermission() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestBluetoothPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN},
+                    REQUEST_BLUETOOTH_PERMISSIONS
+            );
+        }
+    }
+
+    private void showNoPermissionPairedState(ListView pairedListView) {
+        String noPermission = "Bluetooth permission not granted";
+        mPairedDevicesArrayAdapter.clear();
+        mPairedDevicesArrayAdapter.add(noPermission);
+        pairedListView.setEnabled(false);
+    }
+
+    @Override
+    @SuppressLint("MissingPermission")
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode != REQUEST_BLUETOOTH_PERMISSIONS) {
+            return;
+        }
+
+        if (!hasBluetoothConnectPermission() || !hasBluetoothScanPermission()) {
+            Toast.makeText(this, "Bluetooth permission denied", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ListView pairedListView = (ListView) findViewById(R.id.paired_devices);
+        populatePairedDevices(pairedListView);
+    }
+
+    @SuppressLint("MissingPermission")
+    private void populatePairedDevices(ListView pairedListView) {
+        mPairedDevicesArrayAdapter.clear();
+        Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
+
+        if (!pairedDevices.isEmpty()) {
+            pairedListView.setEnabled(true);
+            findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
+            for (BluetoothDevice device : pairedDevices) {
+                mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+            }
+        } else {
+            String noDevices = getResources().getText(R.string.none_paired).toString();
+            mPairedDevicesArrayAdapter.add(noDevices);
+            pairedListView.setEnabled(false);
+        }
+    }
 
 }
