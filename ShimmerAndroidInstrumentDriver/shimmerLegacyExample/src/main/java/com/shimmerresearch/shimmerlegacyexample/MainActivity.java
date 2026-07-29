@@ -1,14 +1,10 @@
 package com.shimmerresearch.shimmerlegacyexample;
 
 import android.app.Activity;
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -44,53 +40,16 @@ public class MainActivity extends AppCompatActivity {
     String shimmerBtAdd = "";
     final static String LOG_TAG = "ShimmerLegacyExample";
     private boolean mFirstTimeConnection = true;
-    private static final int REQUEST_BLUETOOTH_PERMISSIONS = 2001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ensureBluetoothPermissionsAndInitManager();
-    }
-
-    private void ensureBluetoothPermissionsAndInitManager() {
-        if (hasRequiredBluetoothPermissions()) {
-            initializeBtManager();
-        } else {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN},
-                    REQUEST_BLUETOOTH_PERMISSIONS
-            );
-        }
-    }
-
-    private boolean hasRequiredBluetoothPermissions() {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-                (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-                        && ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED);
-    }
-
-    private void initializeBtManager() {
         try {
             btManager = new ShimmerBluetoothManagerAndroid(this, mHandler);
-        } catch (Exception e) {
+        } catch(Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "Unable to initialize Bluetooth manager", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == REQUEST_BLUETOOTH_PERMISSIONS) {
-            if (hasRequiredBluetoothPermissions()) {
-                initializeBtManager();
-            } else {
-                Toast.makeText(this, "Bluetooth permissions are required", Toast.LENGTH_LONG).show();
-            }
         }
     }
 
@@ -178,22 +137,11 @@ public class MainActivity extends AppCompatActivity {
     };
 
     public void selectDevice(View v) {
-        if (!hasRequiredBluetoothPermissions()) {
-            ensureBluetoothPermissionsAndInitManager();
-            Toast.makeText(this, "Grant Bluetooth permissions to select a device", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         Intent intent = new Intent(getApplicationContext(), ShimmerBluetoothDialog.class);
         startActivityForResult(intent, ShimmerBluetoothDialog.REQUEST_CONNECT_SHIMMER);
     }
 
     public void startStreaming(View v) {
-        if (btManager == null) {
-            Toast.makeText(this, "Bluetooth manager not ready", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             btManager.startStreaming(shimmerBtAdd);
         } catch (ShimmerException e) {
@@ -202,11 +150,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void stopStreaming(View v) {
-        if (btManager == null) {
-            Toast.makeText(this, "Bluetooth manager not ready", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             btManager.stopStreaming(shimmerBtAdd);
         } catch (ShimmerException e) {
@@ -215,11 +158,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void disconnectDevice(View v){
-        if (btManager == null) {
-            Toast.makeText(this, "Bluetooth manager not ready", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         btManager.disconnectAllDevices();
         mFirstTimeConnection = true;
     }
@@ -253,11 +191,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == 2) {
             if (resultCode == Activity.RESULT_OK) {
-                if (btManager == null) {
-                    Toast.makeText(this, "Bluetooth manager not ready", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
                 //Ensure no previous device is connected to the App as it only supports a single device at a time:
                 btManager.disconnectAllDevices();
 
@@ -273,9 +206,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if (btManager != null) {
-            btManager.disconnectAllDevices();
-        }
+        btManager.disconnectAllDevices();
         super.onDestroy();
     }
 }
