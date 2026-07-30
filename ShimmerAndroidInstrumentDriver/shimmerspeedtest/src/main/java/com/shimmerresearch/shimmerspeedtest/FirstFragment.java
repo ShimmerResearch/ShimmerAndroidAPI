@@ -138,15 +138,6 @@ public class FirstFragment extends Fragment {
         view.findViewById(R.id.button_first).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (getActivity() instanceof MainActivity) {
-                    boolean ready = ((MainActivity) getActivity()).ensureBluetoothPermissionsAndInit();
-                    if (!ready) {
-                        Toast.makeText(getActivity().getApplicationContext(),
-                                "Allow Bluetooth permissions, then tap CONNECT again",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                }
                 Intent pairedDevicesIntent = new Intent(getActivity().getApplicationContext(), ShimmerBluetoothDialog.class);
                 startActivityForResult(pairedDevicesIntent, REQUEST_CONNECT_SHIMMER);
             }
@@ -220,20 +211,11 @@ public class FirstFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CONNECT_SHIMMER) { //The devices paired list has returned a result
+        if (requestCode == 2) { //The devices paired list has returned a result
             if (resultCode == Activity.RESULT_OK) {
-                if (data == null) {
-                    return;
-                }
                 //Get the Bluetooth mac address of the selected device:
                 String macAdd = data.getStringExtra(EXTRA_DEVICE_ADDRESS);
                 String deviceName = data.getStringExtra(EXTRA_DEVICE_NAME);
-                if (macAdd == null || deviceName == null) {
-                    Toast.makeText(getActivity().getApplicationContext(),
-                            "Invalid device selected",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
                 shimmer = new Shimmer(mHandler,getActivity().getApplicationContext());
                 VerisenseBleAndroidRadioByteCommunication port = null;
                 if (deviceName.toUpperCase().contains("SHIMMER3-")) {

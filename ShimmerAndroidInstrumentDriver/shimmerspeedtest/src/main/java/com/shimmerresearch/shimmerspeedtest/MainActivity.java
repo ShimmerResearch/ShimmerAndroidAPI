@@ -1,13 +1,14 @@
 package com.shimmerresearch.shimmerspeedtest;
 
 import android.Manifest;
+import android.annotation.TargetApi;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.widget.Toast;
 import com.google.android.material.snackbar.Snackbar;
 
-import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 
@@ -15,6 +16,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
@@ -22,16 +24,81 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.clj.fastble.BleManager;
+import com.shimmerresearch.androidradiodriver.Shimmer3BleAndroidRadioByteCommunication;
+import com.shimmerresearch.androidradiodriver.Shimmer3RAndroidRadioByteCommunication;
+import com.shimmerresearch.androidradiodriver.ShimmerSerialPortAndroid;
+import com.shimmerresearch.androidradiodriver.VerisenseBleAndroidRadioByteCommunication;
+import com.shimmerresearch.comms.SerialPortByteCommunication;
+import com.shimmerresearch.comms.TestRadioSerialPort;
+import com.shimmerresearch.exceptions.ShimmerException;
+import com.shimmerresearch.shimmer3.communication.SpeedTestProtocol;
 
 public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
-    private static final int REQUEST_BLUETOOTH_PERMISSIONS = 100;
-    private boolean bleManagerInitialized = false;
-
+    private static final int PERMISSION_REQUEST_BACKGROUND_LOCATION = 1;
+    private static final int PERMISSION_REQUEST_FINE_LOCATION = 2;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_DENIED
+    ||ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_DENIED)
+        {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.BLUETOOTH_CONNECT,Manifest.permission.BLUETOOTH_SCAN}, 2);
+            } else if(Build.VERSION.SDK_INT >=Build.VERSION_CODES.M){
+                if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    if (this.checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        if (this.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+                            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                            builder.setTitle("This app needs background location access");
+                            builder.setMessage("Please grant location access so this app can detect beacons in the background.");
+                            builder.setPositiveButton(android.R.string.ok, null);
+                            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                @TargetApi(23)
+                                @Override
+                                public void onDismiss(DialogInterface dialog) {
+                                    requestPermissions(new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                                            PERMISSION_REQUEST_BACKGROUND_LOCATION);
+                                }
+
+                            });
+                            builder.show();
+                        }
+                        else {
+                            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                            builder.setTitle("Functionality limited");
+                            builder.setMessage("Since background location access has not been granted, this app will not be able to discover beacons in the background.  Please go to Settings -> Applications -> Permissions and grant background location access to this app.");
+                            builder.setPositiveButton(android.R.string.ok, null);
+                            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+
+                                @Override
+                                public void onDismiss(DialogInterface dialog) {
+                                }
+
+                            });
+                            builder.show();
+                        }
+
+                    }
+                }else {
+                    if (!this.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                                PERMISSION_REQUEST_FINE_LOCATION);
+                    }
+                }
+
+            }
+
+        }
+
+
+        BleManager.getInstance().init(getApplication());
         setContentView(R.layout.activity_main);
         setSupportActionBar(findViewById(R.id.toolbar));
 
@@ -47,74 +114,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ensureBluetoothPermissionsAndInit();
-    }
 
-    public boolean ensureBluetoothPermissionsAndInit() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            boolean hasConnect = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-                    == PackageManager.PERMISSION_GRANTED;
-            boolean hasScan = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
-                    == PackageManager.PERMISSION_GRANTED;
-            boolean hasFineLocation = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                    == PackageManager.PERMISSION_GRANTED;
-            if (!hasConnect || !hasScan || !hasFineLocation) {
-                ActivityCompat.requestPermissions(
-                        this,
-                        new String[]{
-                                Manifest.permission.BLUETOOTH_CONNECT,
-                                Manifest.permission.BLUETOOTH_SCAN,
-                                Manifest.permission.ACCESS_FINE_LOCATION
-                        },
-                        REQUEST_BLUETOOTH_PERMISSIONS
-                );
-                return false;
-            }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                        this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        REQUEST_BLUETOOTH_PERMISSIONS
-                );
-                return false;
-            }
-        }
 
-        initBleManagerIfNeeded();
-        return true;
-    }
 
-    private void initBleManagerIfNeeded() {
-        if (!bleManagerInitialized) {
-            BleManager.getInstance().init(getApplication());
-            bleManagerInitialized = true;
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != REQUEST_BLUETOOTH_PERMISSIONS) {
-            return;
-        }
-
-        boolean allGranted = true;
-        for (int result : grantResults) {
-            if (result != PackageManager.PERMISSION_GRANTED) {
-                allGranted = false;
-                break;
-            }
-        }
-
-        if (allGranted) {
-            initBleManagerIfNeeded();
-        } else {
-            Toast.makeText(this,
-                    "Bluetooth permissions are required to discover Shimmer devices",
-                    Toast.LENGTH_LONG).show();
-        }
     }
 
     @Override

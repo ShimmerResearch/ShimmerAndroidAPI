@@ -58,7 +58,6 @@ public class ShimmerBluetoothDialog extends Activity {
     private static final String TAG = "DeviceListActivity";
     private static final boolean D = true;
     public final static int REQUEST_CONNECT_SHIMMER = 2;
-    private static final int REQUEST_SCAN_PERMISSIONS = 101;
 
     // Return Intent extra
     public static String EXTRA_DEVICE_ADDRESS = "device_address";
@@ -71,37 +70,6 @@ public class ShimmerBluetoothDialog extends Activity {
     private ArrayAdapter<String> mNewDevicesArrayAdapter;
     //private String[] deviceAddresses={"","","","","","",""};
     private Button scanButton;
-
-    private boolean hasDiscoveryPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            return ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-        }
-        return true;
-    }
-
-    private void requestDiscoveryPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{
-                            Manifest.permission.BLUETOOTH_SCAN,
-                            Manifest.permission.BLUETOOTH_CONNECT,
-                            Manifest.permission.ACCESS_FINE_LOCATION
-                    },
-                    REQUEST_SCAN_PERMISSIONS
-            );
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    REQUEST_SCAN_PERMISSIONS
-            );
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,10 +93,6 @@ public class ShimmerBluetoothDialog extends Activity {
 
         scanButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                if (!hasDiscoveryPermissions()) {
-                    requestDiscoveryPermissions();
-                    return;
-                }
                 doDiscovery();
 //                v.setVisibility(View.GONE);
                 findViewById(R.id.layoutButton).setVisibility(View.GONE);
@@ -198,14 +162,6 @@ public class ShimmerBluetoothDialog extends Activity {
     private void doDiscovery() {
         if (D) Log.d(TAG, "doDiscovery()");
 
-        if (!hasDiscoveryPermissions()) {
-            Toast.makeText(this, "Bluetooth scan permission is required", Toast.LENGTH_SHORT).show();
-            requestDiscoveryPermissions();
-            return;
-        }
-
-        mNewDevicesArrayAdapter.clear();
-
         // Indicate scanning in the title
         setProgressBarIndeterminateVisibility(true);
         setTitle(R.string.scanning);
@@ -215,6 +171,19 @@ public class ShimmerBluetoothDialog extends Activity {
         findViewById(R.id.layoutNewDevices).setVisibility(View.VISIBLE);
 
         // If we're already discovering, stop it
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+        }
+
         if (mBtAdapter.isDiscovering()) {
             mBtAdapter.cancelDiscovery();
         }
@@ -246,29 +215,6 @@ public class ShimmerBluetoothDialog extends Activity {
         
     };
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != REQUEST_SCAN_PERMISSIONS) {
-            return;
-        }
-
-        boolean allGranted = true;
-        for (int result : grantResults) {
-            if (result != PackageManager.PERMISSION_GRANTED) {
-                allGranted = false;
-                break;
-            }
-        }
-
-        if (allGranted) {
-            doDiscovery();
-            findViewById(R.id.layoutButton).setVisibility(View.GONE);
-        } else {
-            Toast.makeText(this, "Permissions denied - cannot scan", Toast.LENGTH_SHORT).show();
-        }
-    }
-
     // The BroadcastReceiver that listens for discovered devices and
     // changes the title when discovery is finished
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -280,17 +226,9 @@ public class ShimmerBluetoothDialog extends Activity {
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                if (device == null) {
-                    return;
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                        && ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    return;
-                }
                 // If it's already paired, skip it, because it's been listed already
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
-                    String name = device.getName() != null ? device.getName() : "Unknown device";
-                    mNewDevicesArrayAdapter.add(name + "\n" + device.getAddress());
+                    mNewDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 }
             // When discovery is finished, change the Activity title
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
