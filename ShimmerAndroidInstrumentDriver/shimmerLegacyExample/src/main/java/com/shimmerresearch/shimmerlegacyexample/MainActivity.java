@@ -1,10 +1,14 @@
 package com.shimmerresearch.shimmerlegacyexample;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -36,20 +40,92 @@ import static com.shimmerresearch.bluetooth.ShimmerBluetooth.NOTIFICATION_SHIMME
  */
 public class MainActivity extends AppCompatActivity {
 
+    private static final int REQUEST_CODE_BLUETOOTH_PERMISSIONS = 100;
+
     ShimmerBluetoothManagerAndroid btManager;
     String shimmerBtAdd = "";
     final static String LOG_TAG = "ShimmerLegacyExample";
     private boolean mFirstTimeConnection = true;
+    private boolean mOpenConnectDialogAfterPermissionGrant = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (hasRequiredBluetoothPermissions()) {
+            initializeBluetoothManager();
+        }
+    }
+
+    private void initializeBluetoothManager() {
+        if (btManager != null) {
+            return;
+        }
+
         try {
             btManager = new ShimmerBluetoothManagerAndroid(this, mHandler);
-        } catch(Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Failed to initialize Bluetooth manager", e);
+            Toast.makeText(this, "Bluetooth is unavailable or disabled", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private boolean hasRequiredBluetoothPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+                    && ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
+                    && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        return true;
+    }
+
+    private void requestBluetoothPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissions(new String[]{
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            }, REQUEST_CODE_BLUETOOTH_PERMISSIONS);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            }, REQUEST_CODE_BLUETOOTH_PERMISSIONS);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode != REQUEST_CODE_BLUETOOTH_PERMISSIONS) {
+            return;
+        }
+
+        boolean allPermissionsGranted = grantResults.length > 0;
+        for (int grantResult : grantResults) {
+            if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                allPermissionsGranted = false;
+                break;
+            }
+        }
+
+        if (!allPermissionsGranted) {
+            mOpenConnectDialogAfterPermissionGrant = false;
+            Toast.makeText(this, "Bluetooth and location permissions are required to discover devices", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        initializeBluetoothManager();
+        if (mOpenConnectDialogAfterPermissionGrant) {
+            mOpenConnectDialogAfterPermissionGrant = false;
+            Intent intent = new Intent(getApplicationContext(), ShimmerBluetoothDialog.class);
+            startActivityForResult(intent, ShimmerBluetoothDialog.REQUEST_CONNECT_SHIMMER);
         }
     }
 
@@ -137,6 +213,18 @@ public class MainActivity extends AppCompatActivity {
     };
 
     public void selectDevice(View v) {
+        if (!hasRequiredBluetoothPermissions()) {
+            mOpenConnectDialogAfterPermissionGrant = true;
+            requestBluetoothPermissions();
+            return;
+        }
+
+        initializeBluetoothManager();
+        if (btManager == null) {
+            Toast.makeText(this, "Bluetooth is unavailable or disabled", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         Intent intent = new Intent(getApplicationContext(), ShimmerBluetoothDialog.class);
         startActivityForResult(intent, ShimmerBluetoothDialog.REQUEST_CONNECT_SHIMMER);
     }
@@ -190,12 +278,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == 2) {
-            if (resultCode == Activity.RESULT_OK) {
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                initializeBluetoothManager();
+                if (btManager == null) {
+                    Toast.makeText(this, "Bluetooth is unavailable or disabled", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
                 //Ensure no previous device is connected to the App as it only supports a single device at a time:
                 btManager.disconnectAllDevices();
 
                 //Get the Bluetooth mac address of the selected device:
                 String macAdd = data.getStringExtra(EXTRA_DEVICE_ADDRESS);
+                if (macAdd == null || macAdd.isEmpty()) {
+                    Toast.makeText(this, "No device selected", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 btManager.connectShimmerThroughBTAddress(macAdd);   //Connect to the selected device
                 shimmerBtAdd = macAdd;
             }
@@ -206,7 +304,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        btManager.disconnectAllDevices();
+        if (btManager != null) {
+            btManager.disconnectAllDevices();
+        }
         super.onDestroy();
     }
 }

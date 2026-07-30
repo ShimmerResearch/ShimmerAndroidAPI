@@ -13,8 +13,10 @@ public class Shimmer3RAndroidRadioByteCommunication extends VerisenseBleAndroidR
      */
     public Shimmer3RAndroidRadioByteCommunication(String mac) {
         super(mac);
-        TxID = "65333333-A115-11E2-9E9A-0800200CA102";
-        RxID = "65333333-A115-11E2-9E9A-0800200CA101";
+        // Match the established Shimmer3R mapping used by Shimmer3BLEAndroid:
+        // write to ...0101 (TX), notify from ...0102 (RX).
+        TxID = "65333333-A115-11E2-9E9A-0800200CA101";
+        RxID = "65333333-A115-11E2-9E9A-0800200CA102";
         ServiceID = "65333333-A115-11E2-9E9A-0800200CA100";
         sid = UUID.fromString(ServiceID);
         txid = UUID.fromString(TxID);

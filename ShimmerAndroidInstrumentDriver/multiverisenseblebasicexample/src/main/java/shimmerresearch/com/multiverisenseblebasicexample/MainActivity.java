@@ -1,6 +1,7 @@
 package shimmerresearch.com.multiverisenseblebasicexample;
 
 import static com.shimmerresearch.android.guiUtilities.ShimmerBluetoothDialog.EXTRA_DEVICE_ADDRESS;
+import static com.shimmerresearch.android.guiUtilities.ShimmerBluetoothDialog.REQUEST_CONNECT_SHIMMER;
 
 import android.Manifest;
 import android.app.Activity;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 import com.clj.fastble.BleManager;
 import com.shimmerresearch.android.Shimmer;
 import com.shimmerresearch.android.VerisenseDeviceAndroid;
+import com.shimmerresearch.android.guiUtilities.ShimmerBluetoothDialog;
 import com.shimmerresearch.android.manager.ShimmerBluetoothManagerAndroid;
 import com.shimmerresearch.androidradiodriver.VerisenseBleAndroidRadioByteCommunication;
 import com.shimmerresearch.bluetooth.ShimmerBluetooth;
@@ -39,6 +41,9 @@ import java.util.Collection;
 public class MainActivity extends AppCompatActivity {
 
     private final static String LOG_TAG = "MultiVeriBLEExample";
+    private static final int PERMISSION_REQUEST_CODE = 110;
+    private int pendingConnectSlot = 0;
+
     VerisenseBleAndroidRadioByteCommunication radio1 = new VerisenseBleAndroidRadioByteCommunication("DA:A6:19:F0:4A:D7");
     VerisenseProtocolByteCommunication protocol1 = new VerisenseProtocolByteCommunication(radio1);
     VerisenseDeviceAndroid device1;
@@ -95,46 +100,94 @@ public class MainActivity extends AppCompatActivity {
         if (!permissionGranted) {
             // Should we show an explanation?
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, 110);
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_CODE);
             } else {
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 110);
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION}, PERMISSION_REQUEST_CODE);
             }
         } else {
-            BleManager.getInstance().init(getApplication());
-            device1 = new VerisenseDeviceAndroid(mHandler);
-            device2 = new VerisenseDeviceAndroid(mHandler);
-            device3 = new VerisenseDeviceAndroid(mHandler);
+            initializeBleAndDevices();
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == 110){
-            BleManager.getInstance().init(getApplication());
+        if (requestCode == PERMISSION_REQUEST_CODE){
+            boolean allGranted = true;
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    allGranted = false;
+                    break;
+                }
+            }
+            if (allGranted) {
+                initializeBleAndDevices();
+            } else {
+                Toast.makeText(this, "Bluetooth permissions are required to connect", Toast.LENGTH_SHORT).show();
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void initializeBleAndDevices() {
+        BleManager.getInstance().init(getApplication());
+        if (device1 == null) {
             device1 = new VerisenseDeviceAndroid(mHandler);
+        }
+        if (device2 == null) {
             device2 = new VerisenseDeviceAndroid(mHandler);
+        }
+        if (device3 == null) {
             device3 = new VerisenseDeviceAndroid(mHandler);
         }
     }
 
-    //Sensor 1
-    public void connectDevice1(View v) {
+    private void launchBluetoothDialog(int slot) {
+        pendingConnectSlot = slot;
+        Intent pairedDevicesIntent = new Intent(this.getApplicationContext(), ShimmerBluetoothDialog.class);
+        startActivityForResult(pairedDevicesIntent, REQUEST_CONNECT_SHIMMER);
+    }
 
-        Thread thread = new Thread(){
-            public void run(){
+    private void connectSelectedDevice(int slot, String macAddress) {
+        if (device1 == null || device2 == null || device3 == null) {
+            initializeBleAndDevices();
+        }
 
-                device1.setProtocol(Configuration.COMMUNICATION_TYPE.BLUETOOTH, protocol1);
+        VerisenseBleAndroidRadioByteCommunication radio = new VerisenseBleAndroidRadioByteCommunication(macAddress);
+        VerisenseProtocolByteCommunication protocol = new VerisenseProtocolByteCommunication(radio);
+        VerisenseDeviceAndroid device;
+
+        if (slot == 1) {
+            radio1 = radio;
+            protocol1 = protocol;
+            device = device1;
+        } else if (slot == 2) {
+            radio2 = radio;
+            protocol2 = protocol;
+            device = device2;
+        } else {
+            radio3 = radio;
+            protocol3 = protocol;
+            device = device3;
+        }
+
+        final VerisenseDeviceAndroid selectedDevice = device;
+        final VerisenseProtocolByteCommunication selectedProtocol = protocol;
+        Thread thread = new Thread() {
+            public void run() {
+                selectedDevice.setProtocol(Configuration.COMMUNICATION_TYPE.BLUETOOTH, selectedProtocol);
                 try {
-                    device1.connect();
+                    selectedDevice.connect();
                 } catch (ShimmerException e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
-
             }
         };
-
         thread.start();
+    }
+
+    //Sensor 1
+    public void connectDevice1(View v) {
+        launchBluetoothDialog(1);
     }
 
     public void disconnectDevice1(View v) {
@@ -229,22 +282,7 @@ public class MainActivity extends AppCompatActivity {
 
     //Sensor 2
     public void connectDevice2(View v) {
-
-        Thread thread = new Thread(){
-            public void run(){
-
-                device2.setProtocol(Configuration.COMMUNICATION_TYPE.BLUETOOTH, protocol2);
-                try {
-                    device2.connect();
-                } catch (ShimmerException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
-
-            }
-        };
-
-        thread.start();
+        launchBluetoothDialog(2);
     }
 
     public void disconnectDevice2(View v) {
@@ -342,22 +380,7 @@ public class MainActivity extends AppCompatActivity {
     }
     //Sensor 3
     public void connectDevice3(View v) {
-
-        Thread thread = new Thread(){
-            public void run(){
-
-                device3.setProtocol(Configuration.COMMUNICATION_TYPE.BLUETOOTH, protocol3);
-                try {
-                    device3.connect();
-                } catch (ShimmerException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
-
-            }
-        };
-
-        thread.start();
+        launchBluetoothDialog(3);
     }
 
     public void disconnectDevice3(View v) {
@@ -547,10 +570,15 @@ public class MainActivity extends AppCompatActivity {
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == 2) {
+        if(requestCode == REQUEST_CONNECT_SHIMMER) {
             if (resultCode == Activity.RESULT_OK) {
                 //Get the Bluetooth mac address of the selected device:
-                String macAdd = data.getStringExtra(EXTRA_DEVICE_ADDRESS);
+                if (data != null) {
+                    String macAdd = data.getStringExtra(EXTRA_DEVICE_ADDRESS);
+                    if (macAdd != null && !macAdd.isEmpty()) {
+                        connectSelectedDevice(pendingConnectSlot, macAdd);
+                    }
+                }
 
             }
 
