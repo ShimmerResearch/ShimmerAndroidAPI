@@ -149,6 +149,7 @@ import android.util.Log;
 
 import com.shimmerresearch.bluetooth.BluetoothProgressReportPerCmd;
 import com.shimmerresearch.bluetooth.ShimmerBluetooth;
+import com.shimmerresearch.comms.wiredProtocol.ShimmerCrc;
 import com.shimmerresearch.driver.CallbackObject;
 import com.shimmerresearch.driver.Configuration.COMMUNICATION_TYPE;
 
@@ -747,6 +748,14 @@ public class Shimmer extends ShimmerBluetooth{
 		}
 
 	}
+
+	/**
+	 * With a link CRC on, the firmware sends one after a bare ACK too (the reply
+	 * to a SET command). It is the CRC of the single byte 0xFF: F4 65, low byte
+	 * first.
+	 */
+	private static final byte[] BARE_ACK_CRC = ShimmerCrc.shimmerUartCrcCalc(new byte[] {ACK_COMMAND_PROCESSED}, 1);
+
 	@Override
 	protected void processPacket() {
 		setIamAlive(true);
@@ -778,6 +787,29 @@ public class Shimmer extends ShimmerBluetooth{
 		else if(bufferTemp[0]==DATA_PACKET
 				&& bufferTemp[getPacketSizeWithCrc()+1]==ACK_COMMAND_PROCESSED){
 
+			//With a link CRC on, a bare ACK is followed by its own CRC rather than
+			//by the next packet
+			if(isBareAckCrcSoFar(allBytes)){
+				int bareAckEnd = getPacketSizeWithCrc()+2+mBtCommsCrcModeCurrent.getNumCrcBytes();
+				if(allBytes.length<bareAckEnd){
+					return; //wait for the rest of the ACK's CRC
+				}
+
+				//Firstly handle the data packet. If its CRC fails, only the packet is
+				//dropped: the ACK's own CRC has already checked out.
+				if(checkCrc(bufferTemp, getPacketSize()+1)){
+					processDataPacket(bufferTemp);
+				}
+				else {
+					printLogDataForDebugging("CRC error in the data packet before an ACK, packet discarded");
+				}
+				clearSingleDataPacketFromBuffers(bufferTemp, bareAckEnd); //clear the packet, the ACK and its CRC
+
+				//Then handle the ACK from the last SET command
+				processAckWhileStreaming();
+				return;
+			}
+
 			if(mByteArrayOutputStream.size()>getPacketSizeWithCrc()+2){
 				allBytes = mByteArrayOutputStream.toByteArray();
 				bufferTemp = new byte[getPacketSizeWithCrc()+3]; //check if the next byte is data packet
@@ -788,16 +820,7 @@ public class Shimmer extends ShimmerBluetooth{
 					clearSingleDataPacketFromBuffers(bufferTemp, getPacketSizeWithCrc()+2); //clear an extra byte which is the ack
 
 					//Then handle the ACK from the last SET command
-					if(isKnownSetCommand(mCurrentCommand)){
-						stopTimerCheckForAckOrResp(); //cancel the ack timer
-						mWaitForAck=false;
-
-						processAckFromSetCommand(mCurrentCommand);
-
-						mTransactionCompleted = true;
-						setInstructionStackLock(false);
-					}
-					printLogDataForDebugging("Ack Received for Command: \t\t\t" + btCommandToString(mCurrentCommand));
+					processAckWhileStreaming();
 				}
 
 				//this is for LogAndStream support, command is transmitted and ack received
@@ -846,6 +869,71 @@ public class Shimmer extends ShimmerBluetooth{
 					+ "\nBuffer = " + UtilShimmer.bytesToHexStringWithSpacesFormatted(mByteArrayOutputStream.toByteArray()));
 			discardFirstBufferByte(); //throw the first byte away
 		}
+	}
+
+	/**
+	 * Whether the bytes received so far after the ACK that follows a data packet
+	 * are the CRC on a bare ACK. Nothing else can start that way: an in-stream
+	 * response starts 0x8A, a data packet 0x00, and no response opcode is 0xF4.
+	 *
+	 * @param allBytes the contents of mByteArrayOutputStream
+	 */
+	private boolean isBareAckCrcSoFar(byte[] allBytes) {
+		int crcStart = getPacketSizeWithCrc()+2;
+		int numCrcBytesReceived = Math.min(allBytes.length-crcStart, mBtCommsCrcModeCurrent.getNumCrcBytes());
+		if(numCrcBytesReceived<=0){
+			return false;
+		}
+		for(int i=0;i<numCrcBytesReceived;i++){
+			if(allBytes[crcStart+i]!=BARE_ACK_CRC[i]){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** Handles a bare ACK received while streaming: the reply to the last SET command */
+	private void processAckWhileStreaming() {
+		if(isKnownSetCommand(mCurrentCommand)){
+			stopTimerCheckForAckOrResp(); //cancel the ack timer
+			mWaitForAck=false;
+
+			processAckFromSetCommand(mCurrentCommand);
+
+			mTransactionCompleted = true;
+			setInstructionStackLock(false);
+		}
+		printLogDataForDebugging("Ack Received for Command: \t\t\t" + btCommandToString(mCurrentCommand));
+	}
+
+	/**
+	 * Checks the CRC of the data packet at the start of bufferTemp. It leaves the
+	 * buffers alone, so the caller decides what to discard.
+	 * <p>
+	 * The driver's own checkCrc() (0.11.8_beta and earlier) also skips to the
+	 * next frame when a 2-byte CRC fails on its second byte, and processPacket()
+	 * then discarded a byte more: the start of the next packet. DEV-1147 takes
+	 * the skip out of the driver; once the driver pin includes that, this
+	 * override can go.
+	 */
+	@Override
+	public boolean checkCrc(byte[] bufferTemp, int length) {
+		byte[] crcCalc = ShimmerCrc.shimmerUartCrcCalc(bufferTemp, length);
+
+		if (mBtCommsCrcModeCurrent == BT_CRC_MODE.ONE_BYTE_CRC || mBtCommsCrcModeCurrent == BT_CRC_MODE.TWO_BYTE_CRC) {
+			// + 1 as this is the location of the CRC's LSB
+			if (bufferTemp[getPacketSize() + 1] != crcCalc[0]) {
+				return false;
+			}
+		}
+
+		if (mBtCommsCrcModeCurrent == BT_CRC_MODE.TWO_BYTE_CRC) {
+			// + 2 as this is the location of the CRC's MSB
+			if (bufferTemp[getPacketSize() + 2] != crcCalc[1]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	protected void discardFirstBufferByte(){

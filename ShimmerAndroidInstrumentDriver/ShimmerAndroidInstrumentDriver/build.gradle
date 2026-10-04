@@ -56,6 +56,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+    testOptions {
+        // Local unit tests (src/test) run on the JVM against a stub android.jar.
+        // Shimmer's constructor and its logging call into it, so the stubs
+        // return defaults rather than throw.
+        unitTests.returnDefaultValues = true
+    }
 }
 
 
@@ -110,4 +116,5 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.github.Jasonchenlijian:FastBle:2.4.0'
     implementation 'androidx.documentfile:documentfile:1.0.1'
+    testImplementation 'junit:junit:4.13.2'
 }
