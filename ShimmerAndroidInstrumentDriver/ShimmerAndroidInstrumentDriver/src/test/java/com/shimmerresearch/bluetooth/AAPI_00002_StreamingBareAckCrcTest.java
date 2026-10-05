@@ -300,8 +300,8 @@ public class AAPI_00002_StreamingBareAckCrcTest {
 	/**
 	 * Already worked: an in-stream response's 0x8A follows the ACK, and its CRC
 	 * comes at the end. Each frame arrives whole here, in a read of its own or
-	 * all in one: split across reads, an in-stream response has defects of its
-	 * own in processInstreamResponse(), which this change leaves alone.
+	 * all in one. AAPI_00003_StreamingInstreamResponseTest splits in-stream
+	 * responses across reads.
 	 */
 	private void inStreamResponseWhileStreaming(BT_CRC_MODE crcMode, boolean framePerRead) {
 		QueueShimmer device = streamingShimmer3r(crcMode);

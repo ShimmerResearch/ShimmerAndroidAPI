@@ -148,6 +148,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.shimmerresearch.bluetooth.BluetoothProgressReportPerCmd;
+import com.shimmerresearch.bluetooth.BtCommandDetails;
 import com.shimmerresearch.bluetooth.ShimmerBluetooth;
 import com.shimmerresearch.comms.wiredProtocol.ShimmerCrc;
 import com.shimmerresearch.driver.CallbackObject;
@@ -175,6 +176,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -823,31 +825,10 @@ public class Shimmer extends ShimmerBluetooth{
 					processAckWhileStreaming();
 				}
 
-				//this is for LogAndStream support, command is transmitted and ack received
+				//this is for LogAndStream support: an in-stream response, the reply to a
+				//GET command or the firmware's unsolicited status push
 				else if(isSupportedInStreamCmds() && bufferTemp[getPacketSizeWithCrc()+2]==INSTREAM_CMD_RESPONSE){
-					printLogDataForDebugging("COMMAND TXed and ACK RECEIVED IN STREAM");
-					printLogDataForDebugging("INS CMD RESP");
-
-					//Firstly handle the in-stream response
-					stopTimerCheckForAckOrResp(); //cancel the ack timer
-					mWaitForResponse=false;
-					mWaitForAck=false;
-
-					processInstreamResponse(true);
-
-					// Need to remove here because it is an
-					// in-stream response while streaming so not
-					// handled elsewhere
-					if(getListofInstructions().size()>0){
-						removeInstruction(0);
-					}
-
-					mTransactionCompleted=true;
-					setInstructionStackLock(false);
-
-					//Then process the Data packet
-					//processDataPacket(bufferTemp);
-					//clearBuffers();
+					processInstreamResponseWhileStreaming();
 				}
 				else {
 					printLogDataForDebugging("Unknown parsing error while streaming");
@@ -946,103 +927,118 @@ public class Shimmer extends ShimmerBluetooth{
 		consolePrintLn("Throw Byte" + UtilShimmer.bytesToHexStringWithSpacesFormatted(bTemp));
 	}
 
-	protected byte[] getDataFromArrayOutputStream(int extraBytesLength){
-		if (mByteArrayOutputStream.size() >= getPacketSizeWithCrc() + extraBytesLength) {
-			byte[] allBytes = mByteArrayOutputStream.toByteArray();
-			byte[] bufferTemp = new byte[getPacketSizeWithCrc() + extraBytesLength]; //check if the next byte is data packet
-			System.arraycopy(allBytes, 0, bufferTemp, 0, bufferTemp.length);
-			return bufferTemp;
+	/**
+	 * Handles an in-stream response that follows a data packet while streaming:
+	 * [data packet][ACK][INSTREAM_CMD_RESPONSE][response opcode][payload], then
+	 * the link CRC if one is on. It is the reply to GET_STATUS_COMMAND,
+	 * GET_VBATT_COMMAND or GET_DIR_COMMAND, or the status push the firmware
+	 * sends unprompted.
+	 * <p>
+	 * processWhileStreaming() reads whatever has arrived, so the response can be
+	 * split across reads anywhere. Nothing is done until all of it, its CRC
+	 * included, is in the buffer. Then it is parsed from the buffer, the data
+	 * packet is passed on, and the packet, the response and its CRC are consumed
+	 * exactly once. This holds in every streaming state: the driver's
+	 * processInstreamResponse() reads the response from the socket, which only
+	 * suits its own byte-at-a-time reads.
+	 */
+	private void processInstreamResponseWhileStreaming() {
+		byte[] allBytes = mByteArrayOutputStream.toByteArray();
+		int responseCommandIndex = getPacketSizeWithCrc()+3;
+		if(allBytes.length<=responseCommandIndex){
+			return; //wait for the response opcode
 		}
-		return null;
-	}
+		byte inStreamResponseCommand = allBytes[responseCommandIndex];
 
-	/** process responses to in-stream response */
-	@Override
-	protected void processInstreamResponse(boolean shouldClearCrcFromBuffer) {
+		int responseDataIndex = responseCommandIndex+1;
+		int responseDataLength;
+		if(inStreamResponseCommand==DIR_RESPONSE){
+			if(allBytes.length<=responseDataIndex){
+				return; //wait for the length of the directory name
+			}
+			responseDataLength = 1+(allBytes[responseDataIndex]&0xFF);
+		}
+		else if(inStreamResponseCommand==STATUS_RESPONSE){
+			responseDataLength = isSupportedUSBPluggedInStatus()? 2:1;
+		}
+		else if(inStreamResponseCommand==VBATT_RESPONSE){
+			responseDataLength = 3;
+		}
+		else {
+			printLogDataForDebugging("IN STREAM: unknown response " + btCommandToString(inStreamResponseCommand));
+			discardFirstBufferByte();
+			return;
+		}
+		int frameLength = responseDataIndex+responseDataLength+mBtCommsCrcModeCurrent.getNumCrcBytes();
+		if(allBytes.length<frameLength){
+			return; //wait for the rest of the response and its CRC
+		}
 
-		if (!mBluetoothRadioState.equals(BT_STATE.STREAMING)){ //every other start besides streaming
-			super.processInstreamResponse(shouldClearCrcFromBuffer);
-		} else { //streaming state
-			//byte[] inStreamResponseCommandBuffer = readBytes(1, INSTREAM_CMD_RESPONSE);
-			byte[] bufferTemp = getDataFromArrayOutputStream(4);
-			if (bufferTemp != null) {
-				byte inStreamResponseCommand = bufferTemp[bufferTemp.length - 1];
-				consolePrintLn("In-stream received = " + btCommandToString(inStreamResponseCommand));
+		//Firstly handle the in-stream response
+		consolePrintLn("In-stream received = " + btCommandToString(inStreamResponseCommand));
+		byte[] responseData = Arrays.copyOfRange(allBytes, responseDataIndex, responseDataIndex+responseDataLength);
+		if(inStreamResponseCommand==DIR_RESPONSE){
+			printLogDataForDebugging("IN STREAM: DIR_RESPONSE");
+			mDirectoryName = new String(responseData, 1, responseData.length-1);
+			printLogDataForDebugging("Directory Name = " + mDirectoryName);
+		}
+		else if(inStreamResponseCommand==STATUS_RESPONSE){
+			printLogDataForDebugging("IN STREAM: STATUS_RESPONSE");
+			parseStatusByte(responseData);
 
-				if (inStreamResponseCommand == DIR_RESPONSE) {
-					printLogDataForDebugging("IN STREAM: DIR_RESPONSE");
-					//byte[] responseData = readBytes(1, inStreamResponseCommand);
-					bufferTemp = getDataFromArrayOutputStream(5);
-					if (bufferTemp != null) {
-						int directoryNameLength = bufferTemp[bufferTemp.length - 1];
-						byte[] bufferDirectoryName = new byte[directoryNameLength];
-						bufferTemp = getDataFromArrayOutputStream(5 + directoryNameLength);
-						System.arraycopy(bufferTemp, bufferTemp.length - bufferDirectoryName.length, bufferDirectoryName, 0, bufferDirectoryName.length);
-						if (bufferDirectoryName != null) {
-							String tempDirectory = new String(bufferDirectoryName);
-							mDirectoryName = tempDirectory;
-							printLogDataForDebugging("Directory Name = " + mDirectoryName);
-						}
-						processDataPacket(bufferTemp);
-						clearSingleDataPacketFromBuffers(bufferTemp, bufferTemp.length + mBtCommsCrcModeCurrent.getNumCrcBytes());
-					}
-				} else if (inStreamResponseCommand == STATUS_RESPONSE) {
-					printLogDataForDebugging("IN STREAM: STATUS_RESPONSE");
-					int length = 5;
-					int statusBytesToRead = 0;
-					if(isSupportedUSBPluggedInStatus()) {
-						length+=1;
-						statusBytesToRead = 2;
-					} else {
-						statusBytesToRead = 1;
-					}
-					bufferTemp = getDataFromArrayOutputStream(length);
-					if (bufferTemp != null) {
-						byte[] responseData = new byte[statusBytesToRead];
-						System.arraycopy(bufferTemp, bufferTemp.length - responseData.length, responseData, 0, responseData.length);
-						if (responseData != null) {
-							parseStatusByte(responseData);
-
-							if (!isSupportedRtcStateInStatus()) {
-								if (!mIsSensing && !isInitialised()) {
-									writeRealTimeClock();
-								}
-							} else {
-								//New case to make sure RTC is set if it hasn't been already
-								if (!isSDLogging() && (!isInitialised() || !mIsRtcSet)) {
-									writeRealTimeClock();
-								}
-							}
-							eventLogAndStreamStatusChanged(mCurrentCommand);
-							processDataPacket(bufferTemp);
-							clearSingleDataPacketFromBuffers(bufferTemp, bufferTemp.length + mBtCommsCrcModeCurrent.getNumCrcBytes());
-						}
-					}
-				} else if (inStreamResponseCommand == VBATT_RESPONSE) {
-					printLogDataForDebugging("IN STREAM: VBATT_RESPONSE");
-					bufferTemp = getDataFromArrayOutputStream(7);
-					if (bufferTemp != null) {
-						byte[] responseData = new byte[3];
-						System.arraycopy(bufferTemp, bufferTemp.length - responseData.length, responseData, 0, responseData.length);
-						if (responseData != null) {
-							ShimmerBattStatusDetails battStatusDetails = new ShimmerBattStatusDetails(((responseData[1] & 0xFF) << 8) + (responseData[0] & 0xFF), responseData[2]);
-							setBattStatusDetails(battStatusDetails);
-							printLogDataForDebugging("Battery Status:"
-									+ "\tVoltage=" + battStatusDetails.getBattVoltageParsed()
-									+ "\tCharging status=" + battStatusDetails.getChargingStatusParsed()
-									+ "\tBatt %=" + battStatusDetails.getEstimatedChargePercentageParsed());
-						}
-						processDataPacket(bufferTemp);
-						clearSingleDataPacketFromBuffers(bufferTemp, bufferTemp.length + mBtCommsCrcModeCurrent.getNumCrcBytes());
-					}
-
-				} else {
-					discardFirstBufferByte();
+			if (!isSupportedRtcStateInStatus()) {
+				if (!mIsSensing && !isInitialised()) {
+					writeRealTimeClock();
 				}
 			} else {
-				printLogDataForDebugging("IN STREAM: buffer temp is null, byte array output stream size is " + mByteArrayOutputStream.size());
+				//New case to make sure RTC is set if it hasn't been already
+				if (!isSDLogging() && (!isInitialised() || !mIsRtcSet)) {
+					writeRealTimeClock();
+				}
 			}
+			eventLogAndStreamStatusChanged(mCurrentCommand);
 		}
+		else {
+			printLogDataForDebugging("IN STREAM: VBATT_RESPONSE");
+			ShimmerBattStatusDetails battStatusDetails = new ShimmerBattStatusDetails(((responseData[1] & 0xFF) << 8) + (responseData[0] & 0xFF), responseData[2]);
+			setBattStatusDetails(battStatusDetails);
+			printLogDataForDebugging("Battery Status:"
+					+ "\tVoltage=" + battStatusDetails.getBattVoltageParsed()
+					+ "\tCharging status=" + battStatusDetails.getChargingStatusParsed()
+					+ "\tBatt %=" + battStatusDetails.getEstimatedChargePercentageParsed());
+		}
+
+		//Then handle the data packet, and clear the packet, the response and its CRC
+		processDataPacket(allBytes);
+		clearSingleDataPacketFromBuffers(allBytes, frameLength);
+
+		//Last, complete the queued command in flight if this is its reply. While
+		//streaming, an in-stream response is not handled elsewhere.
+		if(isReplyToCommandInFlight(inStreamResponseCommand)){
+			stopTimerCheckForAckOrResp(); //cancel the ack timer
+			mWaitForResponse=false;
+			mWaitForAck=false;
+			if(getListofInstructions().size()>0){
+				removeInstruction(0);
+			}
+			mTransactionCompleted=true;
+			setInstructionStackLock(false);
+		}
+	}
+
+	/**
+	 * Whether an in-stream response answers the queued command in flight. Not
+	 * every one does. While streaming, readBattery() and readStatusLogAndStream()
+	 * write their commands straight to the socket rather than queue them, and the
+	 * firmware pushes its status unprompted: on a dock, an undock, the user
+	 * button, a trial-duration expiry or a low-battery stop. A response's leading
+	 * ACK is not the ACK of the command in flight, so a reply is matched to its
+	 * command by response opcode (log-and-stream-common
+	 * docs/SHIMMER3_BT_COMMUNICATION_PROTOCOL.md section 5.4).
+	 */
+	private boolean isReplyToCommandInFlight(byte inStreamResponseCommand) {
+		BtCommandDetails commandDetails = mBtGetCommandMap.get(mCurrentCommand);
+		return mWaitForAck && commandDetails!=null && commandDetails.expectedResponse==inStreamResponseCommand;
 	}
 
 
