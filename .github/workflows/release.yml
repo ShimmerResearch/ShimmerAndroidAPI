@@ -1,0 +1,245 @@
+# One-click release of the Android API: GitHub Packages + a GitHub Release.
+#
+# How to release
+#   Actions -> "Release Android API" -> Run workflow (on master). Both boxes can stay blank:
+#   - version         blank = next patch after the last Android release
+#                     (AndroidAPI_v3.2.9Beta -> 3.2.10_beta), or type one
+#   - driver_version  the Shimmer-Java-Android-API release (shimmerdriver and
+#                     shimmerbluetoothmanager) to build against. Blank = the newest API_v release
+#
+# Neither version is committed, so master's protection does not get in the way. The library's
+# build files read -PreleaseVersion and -PdriverVersion, which this workflow passes. Without them a
+# local build is versioned 'local' and uses the default driver in ShimmerAndroidInstrumentDriver/
+# build.gradle. The AndroidAPI_v tag plus the driver version named in its release notes rebuild the
+# same .aar.
+#
+# One run does, in order, and creates nothing public until the library has built:
+#   build    picks both versions; fails if this version is already tagged (in this or the older
+#            v3.2.xBeta form) or the driver version has no API_v release; builds the release .aar
+#            against that driver; publishes it to GitHub Packages
+#   release  tags AndroidAPI_v<version> on the commit it built and creates the GitHub Release, with
+#            the driver version, notes since the previous Android API release, and the .aar
+#
+# If only the release job fails, "Re-run failed jobs" re-runs just that job.
+#
+# The driver is read from Shimmer-Java-Android-API's GitHub Packages with this repo's GITHUB_TOKEN.
+# If that is ever refused (401/403 resolving com.shimmerresearch:shimmerdriver), add a classic token
+# with read:packages as the PACKAGES_READ_TOKEN secret and it is used instead.
+#
+# dry_run builds without publishing, from any branch. The workflow also dry-runs on any PR that
+# changes this file, building against master's default driver.
+
+name: Release Android API
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, e.g. 3.3.0_beta. Blank = next patch after the last release'
+        type: string
+        required: false
+      driver_version:
+        description: 'Java API (driver) version to build against, e.g. 0.11.9_beta. Blank = newest release'
+        type: string
+        required: false
+      dry_run:
+        description: 'Build only; publish nothing'
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+
+concurrency:
+  group: release-android-api
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: ShimmerAndroidInstrumentDriver
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      DRY_RUN: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run }}
+      # Read by the repositories in the root build.gradle to resolve the driver.
+      USERNAME: ${{ github.actor }}
+      TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || github.token }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      previous_tag: ${{ steps.version.outputs.previous_tag }}
+      driver: ${{ steps.version.outputs.driver }}
+    steps:
+    - name: Release from master only
+      if: env.DRY_RUN != 'true' && github.ref != 'refs/heads/master'
+      working-directory: .
+      run: |
+        echo "::error::A release must run on master, not ${GITHUB_REF_NAME}. Tick dry_run to try another branch."
+        exit 1
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # tags, to refuse a version that is already released
+
+    - name: Choose the version and the driver
+      id: version
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REQUESTED_VERSION: ${{ inputs.version }}
+        REQUESTED_DRIVER: ${{ inputs.driver_version }}
+      run: |
+        # Earlier releases were tagged v3.2.xBeta, so match those too.
+        PREVIOUS_TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName,createdAt \
+          --jq '[.[] | select(.tagName | test("^(AndroidAPI_)?v[0-9]"))] | sort_by(.createdAt) | last | .tagName // ""')
+        if [ -n "$REQUESTED_VERSION" ]; then
+          VERSION=$REQUESTED_VERSION
+        else
+          # Next patch after the last release, keeping its suffix. The older 3.2.9Beta spelling
+          # counts as 3.2.9_beta, so AndroidAPI_v3.2.9Beta -> 3.2.10_beta.
+          last=${PREVIOUS_TAG#AndroidAPI_v}; last=${last#v}; last=${last/%Beta/_beta}
+          if ! [[ "$last" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(.*)$ ]]; then
+            echo "::error::Cannot work out the next version from '${PREVIOUS_TAG:-no previous release}'. Type one in the version box."
+            exit 1
+          fi
+          VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((BASH_REMATCH[3] + 1))${BASH_REMATCH[4]}"
+        fi
+        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9_.-]*$ ]]; then
+          echo "::error::'$VERSION' is not a version like 3.2.10_beta."
+          exit 1
+        fi
+        TAG="AndroidAPI_v$VERSION"
+        # Check the older spellings too, or a version could be released twice under two tags.
+        legacy=${VERSION/_beta/Beta}
+        for t in "$TAG" "AndroidAPI_v$legacy" "v$legacy"; do
+          if git rev-parse -q --verify "refs/tags/$t" >/dev/null; then
+            if [ "$DRY_RUN" = true ]; then
+              echo "::warning::$VERSION is already released as $t, so a real release would stop here. Dry run continues."
+              break
+            fi
+            echo "::error::$VERSION is already released as $t. Leave the version blank for the next one, or type another."
+            exit 1
+          fi
+        done
+
+        # Driver: typed, else the newest Java API release. A PR dry run uses master's default.
+        default_driver=$(sed -nE "s/.*findProperty\('driverVersion'\) \?: '([^']+)'.*/\1/p" build.gradle)
+        newest=$(gh release list --repo "$GITHUB_REPOSITORY_OWNER/Shimmer-Java-Android-API" --limit 200 --json tagName,createdAt \
+          --jq '[.[] | select(.tagName | startswith("API_v"))] | sort_by(.createdAt) | last | .tagName // "" | ltrimstr("API_v")')
+        if [ -n "$REQUESTED_DRIVER" ]; then
+          DRIVER=$REQUESTED_DRIVER
+        elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+          DRIVER=$newest
+        else
+          DRIVER=$default_driver
+        fi
+        if [ -z "$DRIVER" ]; then
+          echo "::error::No driver version: none typed, and none found. Type one in the driver_version box."
+          exit 1
+        fi
+        if ! gh release view "API_v$DRIVER" --repo "$GITHUB_REPOSITORY_OWNER/Shimmer-Java-Android-API" >/dev/null 2>&1; then
+          echo "::error::Shimmer-Java-Android-API has no release API_v$DRIVER. Pick a released driver version."
+          exit 1
+        fi
+        if [ -n "$newest" ] && [ "$DRIVER" != "$newest" ]; then
+          echo "::warning::Building against driver $DRIVER, but the newest Java API release is $newest."
+        fi
+
+        {
+          echo "version=$VERSION"
+          echo "tag=$TAG"
+          echo "previous_tag=$PREVIOUS_TAG"
+          echo "driver=$DRIVER"
+        } >> "$GITHUB_OUTPUT"
+        echo "Releasing $VERSION as $TAG against driver $DRIVER (master's default: ${default_driver:-none}; notes since ${PREVIOUS_TAG:-the first commit})"
+
+    # AGP 8 needs JDK 17.
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@ec92e829475ac0c2315ea8f9eced72db85bb337a # v3.0.0
+
+    # gradle.properties is gitignored here, so android.useAndroidX (needed for the androidx
+    # dependencies) is passed on the command line.
+    - name: Build the release .aar
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+        DRIVER: ${{ steps.version.outputs.driver }}
+      run: |
+        ./gradlew :ShimmerAndroidInstrumentDriver:assembleRelease -Pandroid.useAndroidX=true \
+          -PreleaseVersion="$VERSION" -PdriverVersion="$DRIVER"
+
+    - name: Publish to GitHub Packages
+      if: env.DRY_RUN != 'true'
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        VERSION: ${{ steps.version.outputs.version }}
+        DRIVER: ${{ steps.version.outputs.driver }}
+      run: |
+        ./gradlew :ShimmerAndroidInstrumentDriver:publish -Pandroid.useAndroidX=true \
+          -PreleaseVersion="$VERSION" -PdriverVersion="$DRIVER"
+
+    - name: Collect the release .aar
+      env:
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        mkdir -p ../release-assets
+        cp ShimmerAndroidInstrumentDriver/build/outputs/aar/ShimmerAndroidInstrumentDriver-release.aar \
+           "../release-assets/shimmerandroidinstrumentdriver-$VERSION.aar"
+        ls -l ../release-assets
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: release-assets
+        path: release-assets/
+        if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && !inputs.dry_run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the tag and the release
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.build.outputs.version }}
+      TAG: ${{ needs.build.outputs.tag }}
+      PREVIOUS_TAG: ${{ needs.build.outputs.previous_tag }}
+      DRIVER: ${{ needs.build.outputs.driver }}
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: release-assets
+        path: release-assets
+
+    # The .aar's POM lists no dependencies, so the notes say which driver to pair it with.
+    - name: Create the tag and GitHub Release
+      working-directory: .
+      run: |
+        args=(-f tag_name="$TAG" -f target_commitish="$GITHUB_SHA")
+        if [ -n "$PREVIOUS_TAG" ]; then args+=(-f previous_tag_name="$PREVIOUS_TAG"); fi
+        driver_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY_OWNER/Shimmer-Java-Android-API/releases/tag/API_v$DRIVER"
+        {
+          echo "Built against \`com.shimmerresearch:shimmerdriver\` and \`com.shimmerresearch:shimmerbluetoothmanager\` **$DRIVER** ([API_v$DRIVER]($driver_url)). Add both, at that version, to your app's dependencies."
+          echo
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" "${args[@]}" --jq .body
+        } > notes.md
+        gh release create "$TAG" release-assets/* \
+          --repo "$GITHUB_REPOSITORY" \
+          --target "$GITHUB_SHA" \
+          --title "$TAG" \
+          --notes-file notes.md
+        {
+          echo "### Released Android API $VERSION"
+          echo "- Release: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          echo "- Package: com.shimmerresearch:shimmerandroidinstrumentdriver:$VERSION"
+          echo "- Built against driver $DRIVER"
+        } >> "$GITHUB_STEP_SUMMARY"

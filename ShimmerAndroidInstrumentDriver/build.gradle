@@ -23,6 +23,11 @@ apply plugin: 'com.jfrog.artifactory'
 */
 apply plugin: 'maven-publish'
 
+// The shimmerdriver / shimmerbluetoothmanager version (Shimmer-Java-Android-API) that the library and
+// every example build against. The default is what master builds with; the Release Android API
+// workflow passes -PdriverVersion, by default the newest Java API release.
+def shimmerDriverVersion = findProperty('driverVersion') ?: '0.11.7_beta'
+
 allprojects {
     repositories {
         google()
@@ -78,7 +83,7 @@ allprojects {
                 implementation 'java3d:vecmath:1.3.1'
                 implementation 'androidx.appcompat:appcompat:1.7.0'
                 implementation 'com.github.Jasonchenlijian:FastBle:2.4.0'
-                implementation (group: 'com.shimmerresearch', name: 'shimmerbluetoothmanager', version:'0.11.7_beta'){
+                implementation (group: 'com.shimmerresearch', name: 'shimmerbluetoothmanager', version: shimmerDriverVersion){
 
                     // excluding org.json which is provided by Android
                     exclude group: 'io.netty'
@@ -86,7 +91,7 @@ allprojects {
                     exclude group: 'org.apache.commons.math'
                 }
 
-                implementation (group: 'com.shimmerresearch', name: 'shimmerdriver', version:'0.11.7_beta'){
+                implementation (group: 'com.shimmerresearch', name: 'shimmerdriver', version: shimmerDriverVersion){
 
                     // excluding org.json which is provided by Android
                     exclude group: 'io.netty'

@@ -77,13 +77,15 @@ publishing {
 def getArtificatId = { ->
     return "ShimmerAndroidInstrumentDriver" // Replace with library name ID
 }
-/*
+// Published by the "Release Android API" workflow (.github/workflows/release.yml), which picks the
+// version and passes it as -PreleaseVersion; the AndroidAPI_v tags record what was released. Run
+// assembleRelease before publish, because the artifact is the built .aar file.
 publishing {
     publications {
         bar(MavenPublication) {
             groupId = 'com.shimmerresearch' // Replace with your package's group/organization name
             artifactId = 'shimmerandroidinstrumentdriver' // Replace with the name of your package
-            version = '3.2.9_beta' // Replace with your package version
+            version = project.findProperty('releaseVersion') ?: 'local' // set by the Release Android API workflow
             artifact("$buildDir/outputs/aar/${getArtificatId()}-release.aar")
         }
     }
@@ -91,16 +93,17 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/ShimmerEngineering/ShimmerAndroidAPI")
+            url = uri("https://maven.pkg.github.com/ShimmerResearch/ShimmerAndroidAPI")
             credentials {
-                //Create github.properties in root project folder file with gpra.usr=GITHUB_USER_ID  & gpra.key=PERSONAL_ACCESS_TOKEN
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+                // Locally: gpr.user and gpr.key in GRADLE_USER_HOME/gradle.properties, with a token
+                // that has write:packages. In the workflow: GITHUB_ACTOR and GITHUB_TOKEN. These are
+                // kept apart from USERNAME/TOKEN in the root build.gradle, which only need to read.
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }
 }
-*/
 dependencies {
     implementation 'com.google.guava:guava:20.0'
     implementation 'java3d:vecmath:1.3.1'
