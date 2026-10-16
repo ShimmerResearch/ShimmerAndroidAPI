@@ -104,6 +104,16 @@ publishing {
         }
     }
 }
+// Without -PreleaseVersion the version is 'local', and GitHub Packages never lets a version be
+// overwritten. Releases go through the Release Android API workflow; publishToMavenLocal is unaffected.
+tasks.withType(PublishToMavenRepository).configureEach {
+    doFirst {
+        if (publication.version == 'local') {
+            throw new GradleException("Refusing to publish ${publication.artifactId} as version 'local'. " +
+                "Release with the Release Android API workflow, or pass -PreleaseVersion.")
+        }
+    }
+}
 dependencies {
     implementation 'com.google.guava:guava:20.0'
     implementation 'java3d:vecmath:1.3.1'

@@ -61,6 +61,7 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # a hung Gradle daemon otherwise holds the runner for 6 hours
     permissions:
       contents: read
       packages: write
@@ -206,6 +207,7 @@ jobs:
     needs: build
     if: github.event_name == 'workflow_dispatch' && !inputs.dry_run
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write # create the tag and the release
     env:
