@@ -30,6 +30,7 @@ jobs:
   build:
     name: Build library and examples
     runs-on: ubuntu-latest
+    timeout-minutes: 30 # a hung Gradle daemon otherwise holds the runner for 6 hours
     permissions:
       contents: read
       packages: read
@@ -51,6 +52,9 @@ jobs:
       uses: gradle/actions/setup-gradle@ec92e829475ac0c2315ea8f9eced72db85bb337a # v3.0.0
 
     # gradle.properties is gitignored here, so android.useAndroidX (needed for the androidx
-    # dependencies) is passed on the command line.
+    # dependencies) and the daemon heap are passed on the command line. Gradle's default 512 MB
+    # heap runs out while dexing the examples, and the daemon then hangs instead of failing.
     - name: Build the library and every example
-      run: ./gradlew assembleDebug --continue -Pandroid.useAndroidX=true
+      run: >-
+        ./gradlew assembleDebug --continue -Pandroid.useAndroidX=true
+        -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
