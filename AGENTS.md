@@ -55,8 +55,11 @@ allprojects { subprojects { afterEvaluate { dependencies {
   move together.
 
 So an upstream fix reaches this repo only once it is **in a Java API release** — and a
-stream-parser fix not even then (above). Bump the default with each Java API release, so CI builds
-what a release would.
+stream-parser fix not even then (above). The default moves with each Java API release, so CI builds
+what a release would: Release Java API (Shimmer-Java-Android-API's `release.yml`, job
+`update-android`) opens a PR here on a `driver_<version>` branch. The PR checklist covers the
+steps that stay manual: porting parser fixes, the Android HIL at master's new commit, and Release
+Android API.
 
 ## Build
 
@@ -115,12 +118,20 @@ instead of throwing — `Shimmer`'s constructor and its logging call into them. 
 ./gradlew -Pandroid.useAndroidX=true :ShimmerAndroidInstrumentDriver:test
 ```
 
-That runs both the debug and release variants. With no CI (below), nothing else will run them.
+That runs both the debug and release variants. CI runs the debug variant (`testDebugUnitTest`).
 
-## No CI
+Some tests pin down what the driver queues, not only what `Shimmer.java` does, so a driver pin bump
+can fail them with nothing wrong here: adapt them to the driver's new behaviour in the bump PR. The
+first case is DEV-1337 (Shimmer-Java-Android-API#339), which stops the driver writing the clock to
+a streaming Shimmer3R, while AAPI_00002, 00003 and 00005 expect `startSDLogging()` on one to queue
+`SET_RWC_COMMAND`. #339 adapts the driver's own tests the same way.
 
-There are no workflows. Nothing here is built on push or PR, so a change that does not compile can
-merge. Build locally before claiming it works.
+## CI
+
+`.github/workflows/ci.yml` runs on every PR into master and every push to it. It builds the library
+and every example (`assembleDebug`), then runs the library's unit tests, against the default driver.
+No check is required to merge yet, so look at the result. `release.yml` is the dispatch-only Release
+Android API workflow; it dry-runs on any PR that changes it.
 
 ## Modules
 
