@@ -375,6 +375,26 @@ final class ShimmerSession implements AutoCloseable {
 	}
 
 	/**
+	 * Why the unit will not log to its SD card, or null if nothing says it won't. Docked, or on USB
+	 * (Shimmer3R), the firmware ACKs a start of logging and then ignores it (LogAndStream v1.01.002 on
+	 * Shimmer3, v1.01.004 on Shimmer3R). The driver marks the unit logging on that ACK, so the API's
+	 * state shows logging with nothing logged. Taken from the status the connect read.
+	 */
+	String whyCannotLog() {
+		ShimmerBluetooth d = device();
+		if (d == null) {
+			return null;
+		}
+		if (d.isDocked()) {
+			return "the unit reports itself docked";
+		}
+		if (d.isUsbPluggedIn()) {
+			return "the unit reports USB plugged in";
+		}
+		return null;
+	}
+
+	/**
 	 * Accel only (the low-noise accel on Shimmer3, the LSM6DSV's on Shimmer3R) at rateHz, written
 	 * the way the examples do: a clone, AssembleShimmerConfig, then configureShimmer.
 	 */
@@ -400,16 +420,20 @@ final class ShimmerSession implements AutoCloseable {
 			return false;
 		}
 		// Done when the operation has finished: either the manager's progress report (not every
-		// version forwards it to the Handler) or the fresh "Ready" the unit posts when the operation
-		// ends, with the requested rate read back. The status timer is stopped during an operation,
-		// so that "Ready" comes from the configuration.
+		// version forwards it to the Handler) or a "Ready" with the requested rate read back, and in
+		// either case once the queue is empty. The rate and a "Ready" are not enough on their own: the
+		// rate is in the first config chunk written, and a "Ready" can be the end of an earlier stop.
+		// Straight after a stopStreaming() both came with commands still queued, so the test
+		// disconnected under the IO thread (DEV-1372). The configure queues the whole operation before
+		// it returns, so an empty queue means its last ACK has been processed.
 		boolean done = waitFor(() -> state() == BT_STATE.CONNECTED
+				&& queuedInstructions() == 0
 				&& (configureResult != null
 					|| (stateMessages > stateMessagesBefore && Math.abs(rateOnDevice() - rateHz) < 0.5)),
 				timeoutMs);
-		event(String.format(Locale.ROOT, "configure %s (%s): rate on device %.2f Hz",
+		event(String.format(Locale.ROOT, "configure %s (%s): rate on device %.2f Hz, %d instructions queued",
 				done ? "finished" : "timed out", configureResult != null ? configureResult : "no progress report",
-				rateOnDevice()));
+				rateOnDevice(), queuedInstructions()));
 		return done && (configureResult == null || configureResult == BluetoothProgressReportPerDevice.OperationState.SUCCESS);
 	}
 

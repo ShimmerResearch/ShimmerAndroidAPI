@@ -222,7 +222,8 @@ public class Shimmer extends ShimmerBluetooth{
 	//transient public final Handler mHandler;
 
 	transient private ConnectThread mConnectThread;
-	transient private ConnectedThread mConnectedThread;
+	// volatile: stop() nulls it on the caller's thread while the IO thread writes through it
+	transient private volatile ConnectedThread mConnectedThread;
 	private boolean mDummy=false;
 	transient private LocalDevice localDevice;
 	//private InputStream mInputStream=null;
@@ -1217,24 +1218,20 @@ public class Shimmer extends ShimmerBluetooth{
 	}
 
 	/**
-	 * Write to the ConnectedThread in an unsynchronized manner
+	 * Write to the ConnectedThread in an unsynchronized manner. If the connection has
+	 * already been stopped, the bytes are dropped and logged, as a failed write is.
 	 * @param out The bytes to write
 	 * @see ConnectedThread write(byte[])
 	 */
 	public void write(byte[] out) {
-		/*
-		// Create temporary object
-		ConnectedThread r;
-		// Synchronize a copy of the ConnectedThread
-		synchronized (this) {
-			//if (mState != BT_STATE.CONNECTED && mState != BT_STATE.STREAMING) return;
-			if (mBluetoothRadioState == BT_STATE.DISCONNECTED ) return;
-			r = mConnectedThread;
+		// stop() can null mConnectedThread on another thread at any point, e.g. while the
+		// IO thread sleeps before sending a queued command, so read it once (DEV-1372)
+		ConnectedThread connectedThread = mConnectedThread;
+		if (connectedThread == null) {
+			Log.d(mClassName, "Command NOT transmitted, not connected: " + mMyBluetoothAddress + "; Command Issued: " + mCurrentCommand );
+			return;
 		}
-		// Perform the write unsynchronized
-		r.write(out);
-		*/
-		mConnectedThread.write(out);
+		connectedThread.write(out);
 	}
 
 	/**

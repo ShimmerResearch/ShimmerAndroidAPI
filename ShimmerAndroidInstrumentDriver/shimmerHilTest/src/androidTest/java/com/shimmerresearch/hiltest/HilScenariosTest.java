@@ -243,7 +243,7 @@ public class HilScenariosTest {
 	 * Commands while streaming: start and stop SD logging (SET_RWC_COMMAND, whose bare ACK carries the
 	 * link CRC: DEV-1147 in the driver, DEV-1148 for Android's own parser) and read the battery. No
 	 * packet may be lost around any of them, and logging must actually start and stop. Needs an SD
-	 * card in the unit and a link CRC on to exercise DEV-1148.
+	 * card in the unit, off the dock and USB, and a link CRC on to exercise DEV-1148.
 	 */
 	@Test
 	public void midStreamSet() throws Exception {
@@ -251,7 +251,7 @@ public class HilScenariosTest {
 		double rate = arg("rate", 256.0);
 		int cycles = arg("cycles", 3);
 		double maxLoss = arg("maxLossPercent", 1.0);
-		if (connectAndConfigure(rate)) {
+		if (connectAndConfigure(rate) && checkCanLog()) {
 			ShimmerBluetooth d = session.device();
 			double deviceRate = d.getSamplingRateShimmer();
 			checkRate(deviceRate, "stream");
@@ -355,7 +355,8 @@ public class HilScenariosTest {
 	 * every 40 ms for 400 ms: Android writes those reads straight out, so some land in the pause. Then
 	 * each restart stops logging and starts it again back to back, so the queued START_LOGGING_ONLY goes
 	 * out in the pause and its bare ACK comes first. Every battery read must be answered, logging must
-	 * restart, and nothing may log a parser error or a command timeout. Needs an SD card in the unit.
+	 * restart, and nothing may log a parser error or a command timeout. Needs an SD card in the unit,
+	 * off the dock and USB.
 	 */
 	@Test
 	public void inStream() throws Exception {
@@ -363,7 +364,7 @@ public class HilScenariosTest {
 		double rate = arg("rate", 256.0);
 		int cycles = arg("cycles", 3);
 		double maxLoss = arg("maxLossPercent", 1.0);
-		if (connectAndConfigure(rate)) {
+		if (connectAndConfigure(rate) && checkCanLog()) {
 			double deviceRate = session.rateOnDevice();
 			checkRate(deviceRate, "stream");
 			LogTally tally = new LogTally();
@@ -522,6 +523,17 @@ public class HilScenariosTest {
 		report.put("timestampJumpsNearSdLoggingStartStop", nearSd);
 	}
 
+	/**
+	 * For a scenario that logs to the SD card: fails it at once, saying why, if the unit is docked or
+	 * on USB. The firmware then ignores the start, and the API still shows the unit logging, so the
+	 * scenario would test nothing, or fail later on an unrelated check.
+	 */
+	private boolean checkCanLog() {
+		String why = session.whyCannotLog();
+		report.check(why == null, why + ": the firmware will not start SD logging, so this scenario cannot run. Take the unit off the dock and USB, then run it again");
+		return why == null;
+	}
+
 	/** Starts SD logging while streaming and waits until it has started */
 	private boolean startSdLoggingWhileStreaming(String what, List<Double> sdMoments) throws InterruptedException {
 		sdMoments.add(session.nowMs());
@@ -537,15 +549,16 @@ public class HilScenariosTest {
 	 * to its SD card. The sequence reads the status part way through, before the calibration dump and
 	 * the inquiry, and that reply used to report the unit ready early, so an app's next command went
 	 * out in among the rest of the sequence. Connects to the unit idle, then again while it logs.
-	 * Needs an SD card in the unit.
+	 * Needs an SD card in the unit, off the dock and USB.
 	 */
 	@Test
 	public void connectReady() throws Exception {
 		begin("connect_ready");
 		if (connectAndCheckReady("idle", BT_STATE.CONNECTED)) {
-			boolean logging = session.startSdLogging()
+			boolean canLog = checkCanLog();
+			boolean logging = canLog && session.startSdLogging()
 					&& session.waitFor(() -> session.state() == BT_STATE.SDLOGGING && session.queuedInstructions() == 0, 5000);
-			report.check(logging, "SD logging did not start (state " + session.state() + "; is there an SD card?)");
+			report.check(!canLog || logging, "SD logging did not start (state " + session.state() + "; is there an SD card?)");
 			report.check(session.disconnect(10000), "did not disconnect within 10 s");
 			if (logging && session.hung == null) {
 				Thread.sleep(2000);
