@@ -1,6 +1,7 @@
 # Build check for every PR into master and every push to master: the library and every example
-# module in settings.gradle. A driver pin bump is proven against the examples before it merges
-# (DEV-1115). Releases are a separate, dispatch-only workflow (release.yml).
+# module in settings.gradle, then the library's unit tests. A driver pin bump is proven against
+# the examples and the tests before it merges (DEV-1115); each Java API release opens one
+# (DEV-1359). Releases are a separate, dispatch-only workflow (release.yml).
 #
 # assembleDebug is run by name from the Gradle root, so Gradle runs it in every module that has
 # it: a module added to settings.gradle is built here without editing this file. --continue keeps
@@ -29,7 +30,7 @@ defaults:
 
 jobs:
   build:
-    name: Build library and examples
+    name: Build and test
     runs-on: ubuntu-latest
     timeout-minutes: 30 # a hung Gradle daemon otherwise holds the runner for 6 hours
     permissions:
@@ -58,4 +59,13 @@ jobs:
     - name: Build the library and every example
       run: >-
         ./gradlew assembleDebug --continue -Pandroid.useAndroidX=true
+        -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+
+    # The library's JVM unit tests (src/test, AAPI_*), on the debug variant only: the release
+    # variant runs the same tests. They run even if an example failed to build, so one run reports
+    # both. Same flags as above, so Gradle reuses the daemon.
+    - name: Run the library's unit tests
+      if: ${{ !cancelled() }}
+      run: >-
+        ./gradlew :ShimmerAndroidInstrumentDriver:testDebugUnitTest -Pandroid.useAndroidX=true
         -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
