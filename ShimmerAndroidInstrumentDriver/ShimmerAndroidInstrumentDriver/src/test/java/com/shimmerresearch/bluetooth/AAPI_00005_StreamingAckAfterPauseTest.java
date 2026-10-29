@@ -385,15 +385,16 @@ public class AAPI_00005_StreamingAckAfterPauseTest {
 		forEachCrcModeAndReadSize(CRC_ON, (crcMode, readSize) -> {
 			QueueShimmer device = streamingShimmer3r(crcMode);
 			device.stopSDLogging();
-			device.startSDLogging();
-			assertQueued(device, ShimmerObject.STOP_LOGGING_ONLY_COMMAND, ShimmerObject.SET_RWC_COMMAND, ShimmerObject.START_LOGGING_ONLY_COMMAND);
+			device.startSDLogging(); // START_LOGGING_ONLY_COMMAND: no clock write to a streaming Shimmer3R (DEV-1337)
+			device.readDirectoryName();
+			assertQueued(device, ShimmerObject.STOP_LOGGING_ONLY_COMMAND, ShimmerObject.START_LOGGING_ONLY_COMMAND, ShimmerObject.GET_DIR_COMMAND);
 			stopLoggingAndReceiveItsAck(device, crcMode, readSize);
 
 			sendNextInstruction(device);
-			assertEquals(ShimmerObject.SET_RWC_COMMAND, device.mCurrentCommand);
+			assertEquals(ShimmerObject.START_LOGGING_ONLY_COMMAND, device.mCurrentCommand);
 			receive(device, readSize, bareAck(crcMode), dataPacket(payload(2), crcMode), new byte[] {ShimmerObject.DATA_PACKET});
 			assertAnswered(device);
-			assertQueued(device, ShimmerObject.START_LOGGING_ONLY_COMMAND);
+			assertQueued(device, ShimmerObject.GET_DIR_COMMAND);
 
 			assertParsed(device, payload(1), payload(2));
 			assertBuffered(device, ShimmerObject.DATA_PACKET);
