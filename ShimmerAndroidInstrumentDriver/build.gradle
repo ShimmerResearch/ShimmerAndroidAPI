@@ -26,7 +26,7 @@ apply plugin: 'maven-publish'
 // The shimmerdriver / shimmerbluetoothmanager version (Shimmer-Java-Android-API) that the library and
 // every example build against. The default is what master builds with; the Release Android API
 // workflow passes -PdriverVersion, by default the newest Java API release.
-def shimmerDriverVersion = findProperty('driverVersion') ?: '0.11.11_beta'
+def shimmerDriverVersion = findProperty('driverVersion') ?: '0.11.12_beta'
 
 allprojects {
     repositories {
