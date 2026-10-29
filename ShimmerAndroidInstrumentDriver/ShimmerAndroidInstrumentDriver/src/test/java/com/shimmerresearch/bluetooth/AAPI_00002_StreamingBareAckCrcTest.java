@@ -253,30 +253,25 @@ public class AAPI_00002_StreamingBareAckCrcTest {
 	}
 
 	/**
-	 * startSDLogging() while streaming sends SET_RWC_COMMAND and then
-	 * START_LOGGING_ONLY_COMMAND, and the firmware answers each with a bare ACK
+	 * startSDLogging() while a Shimmer3R streams sends START_LOGGING_ONLY_COMMAND,
+	 * with no clock write before it (DEV-1337), and the firmware answers with a
+	 * bare ACK
 	 */
 	private void startSdLoggingWhileStreaming(BT_CRC_MODE crcMode, int readSize) {
 		QueueShimmer device = streamingShimmer3r(crcMode);
 		device.startSDLogging();
-
-		sendNextInstruction(device);
-		assertEquals(ShimmerObject.SET_RWC_COMMAND, device.mCurrentCommand);
-		receive(device, readSize, dataPacket(payload(1), crcMode), bareAck(crcMode),
-				dataPacket(payload(2), crcMode), dataPacket(payload(3), crcMode));
-		assertAckProcessed(device);
-		assertEquals("START_LOGGING_ONLY_COMMAND is still queued", 1, device.getListofInstructions().size());
+		assertEquals("only START_LOGGING_ONLY_COMMAND is queued", 1, device.getListofInstructions().size());
 
 		sendNextInstruction(device);
 		assertEquals(ShimmerObject.START_LOGGING_ONLY_COMMAND, device.mCurrentCommand);
-		receive(device, readSize, dataPacket(payload(4), crcMode), bareAck(crcMode),
-				dataPacket(payload(5), crcMode), new byte[] {ShimmerObject.DATA_PACKET});
+		receive(device, readSize, dataPacket(payload(1), crcMode), bareAck(crcMode),
+				dataPacket(payload(2), crcMode), dataPacket(payload(3), crcMode), new byte[] {ShimmerObject.DATA_PACKET});
 		assertAckProcessed(device);
 		assertTrue(device.getListofInstructions().isEmpty());
 		assertTrue(device.isSDLogging());
 		assertEquals(BT_STATE.STREAMING_AND_SDLOGGING, device.getBluetoothRadioState());
 
-		assertParsed(device, payload(1), payload(2), payload(3), payload(4), payload(5));
+		assertParsed(device, payload(1), payload(2), payload(3));
 		assertBuffered(device, ShimmerObject.DATA_PACKET);
 		assertNoResync(device);
 	}

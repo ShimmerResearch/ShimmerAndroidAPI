@@ -122,9 +122,12 @@ That runs both the debug and release variants. CI runs the debug variant (`testD
 
 Some tests pin down what the driver queues, not only what `Shimmer.java` does, so a driver pin bump
 can fail them with nothing wrong here: adapt them to the driver's new behaviour in the bump PR. The
-first case is DEV-1337 (Shimmer-Java-Android-API#339), which stops the driver writing the clock to
-a streaming Shimmer3R, while AAPI_00002, 00003 and 00005 expect `startSDLogging()` on one to queue
-`SET_RWC_COMMAND`. #339 adapts the driver's own tests the same way.
+first case was driver 0.11.12_beta and DEV-1337 (Shimmer-Java-Android-API#339): the driver no longer
+writes the clock to a streaming Shimmer3R, so `startSDLogging()` on one queues only
+`START_LOGGING_ONLY_COMMAND`. The 0.11.12_beta bump adapted AAPI_00002, 00003 and 00005 to that, as
+#339 did the driver's own tests. Where a test needs a command queued behind the one in flight, it
+uses `readDirectoryName()`: while streaming, `readBattery()` here writes straight to the socket
+rather than queueing.
 
 ## CI
 

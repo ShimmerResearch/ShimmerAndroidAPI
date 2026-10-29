@@ -357,13 +357,13 @@ public class AAPI_00003_StreamingInstreamResponseTest {
 			receive(device, readSize, dataPacket(payload(1), crcMode), statusPush(STATUS_STREAMING, crcMode),
 					dataPacket(payload(2), crcMode));
 			assertAwaitingReply(device, ShimmerObject.GET_DIR_COMMAND);
-			assertQueued(device, ShimmerObject.GET_DIR_COMMAND, ShimmerObject.SET_RWC_COMMAND, ShimmerObject.START_LOGGING_ONLY_COMMAND);
+			assertQueued(device, ShimmerObject.GET_DIR_COMMAND, ShimmerObject.START_LOGGING_ONLY_COMMAND);
 
 			receive(device, readSize, dataPacket(payload(3), crcMode), dirReply(crcMode),
 					dataPacket(payload(4), crcMode), new byte[] {ShimmerObject.DATA_PACKET});
 			assertEquals(DIRECTORY_NAME, device.getDirectoryName());
 			assertAnswered(device);
-			assertQueued(device, ShimmerObject.SET_RWC_COMMAND, ShimmerObject.START_LOGGING_ONLY_COMMAND);
+			assertQueued(device, ShimmerObject.START_LOGGING_ONLY_COMMAND);
 
 			assertParsed(device, payload(1), payload(2), payload(3), payload(4));
 			assertBuffered(device, ShimmerObject.DATA_PACKET);
@@ -372,36 +372,40 @@ public class AAPI_00003_StreamingInstreamResponseTest {
 	}
 
 	/**
-	 * startSDLogging() while streaming queues SET_RWC_COMMAND, then
-	 * START_LOGGING_ONLY_COMMAND. In-stream responses that answer neither leave
+	 * startSDLogging() while a Shimmer3R streams queues START_LOGGING_ONLY_COMMAND
+	 * with no clock write before it (DEV-1337), and readDirectoryName() queues
+	 * GET_DIR_COMMAND behind it. In-stream responses that answer neither leave
 	 * both alone: the battery timer's reading, which readBattery() wrote straight
 	 * out, while the first awaits its ACK, and a status push while the second
-	 * waits its turn. The first used to take SET_RWC_COMMAND off the queue, so
-	 * its ACK was processed against START_LOGGING_ONLY_COMMAND's instruction.
+	 * waits its turn. The first used to take the SET command in flight off the
+	 * queue, so its ACK was processed against the next instruction.
 	 */
 	@Test
 	public void responsesThatAnswerNoQueuedCommandLeaveTheQueueAlone() throws Exception {
 		forEveryCrcModeAndReadSize((crcMode, readSize) -> {
 			QueueShimmer device = streamingShimmer3r(crcMode);
 			device.startSDLogging();
+			device.readDirectoryName();
 			sendNextInstruction(device);
 			device.readBattery();
 
 			receive(device, readSize, dataPacket(payload(1), crcMode), vbattReply(crcMode), dataPacket(payload(2), crcMode));
 			assertEquals(VBATT_ADC, device.getBattStatusDetails().getBattAdcValue(), 0);
-			assertAwaitingReply(device, ShimmerObject.SET_RWC_COMMAND);
-			assertQueued(device, ShimmerObject.SET_RWC_COMMAND, ShimmerObject.START_LOGGING_ONLY_COMMAND);
+			assertAwaitingReply(device, ShimmerObject.START_LOGGING_ONLY_COMMAND);
+			assertQueued(device, ShimmerObject.START_LOGGING_ONLY_COMMAND, ShimmerObject.GET_DIR_COMMAND);
 
 			receive(device, readSize, dataPacket(payload(3), crcMode), bareAck(crcMode), dataPacket(payload(4), crcMode));
 			assertAnswered(device);
-			assertQueued(device, ShimmerObject.START_LOGGING_ONLY_COMMAND);
+			assertQueued(device, ShimmerObject.GET_DIR_COMMAND);
+			assertTrue(device.isSDLogging());
 
-			receive(device, readSize, dataPacket(payload(5), crcMode), statusPush(STATUS_STREAMING, crcMode), dataPacket(payload(6), crcMode));
-			assertQueued(device, ShimmerObject.START_LOGGING_ONLY_COMMAND);
+			receive(device, readSize, dataPacket(payload(5), crcMode), statusPush(STATUS_STREAMING_AND_LOGGING, crcMode), dataPacket(payload(6), crcMode));
+			assertQueued(device, ShimmerObject.GET_DIR_COMMAND);
 
 			sendNextInstruction(device);
-			receive(device, readSize, dataPacket(payload(7), crcMode), bareAck(crcMode),
+			receive(device, readSize, dataPacket(payload(7), crcMode), dirReply(crcMode),
 					dataPacket(payload(8), crcMode), new byte[] {ShimmerObject.DATA_PACKET});
+			assertEquals(DIRECTORY_NAME, device.getDirectoryName());
 			assertAnswered(device);
 			assertQueued(device);
 			assertTrue(device.isSDLogging());
