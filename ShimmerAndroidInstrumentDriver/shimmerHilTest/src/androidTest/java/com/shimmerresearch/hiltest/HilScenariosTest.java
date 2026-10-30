@@ -273,9 +273,12 @@ public class HilScenariosTest {
 				boolean started = session.startSdLogging();
 				report.check(started, "cycle " + i + ": startSDLogging did not complete: it threw, hung or was skipped after a hung call (see the events)");
 				if (started) {
-					report.check(session.waitFor(() -> session.state() == BT_STATE.STREAMING_AND_SDLOGGING, 5000),
-							"cycle " + i + ": SD logging did not start while streaming (state " + session.state()
-									+ "; is there an SD card? With a link CRC on, DEV-1148)");
+					boolean logging = session.waitFor(() -> session.state() == BT_STATE.STREAMING_AND_SDLOGGING, 5000);
+					report.check(logging, "cycle " + i + ": SD logging did not start while streaming (state " + session.state()
+							+ "; is there an SD card? With a link CRC on, DEV-1148)");
+					if (logging) {
+						sdMoments.add(session.nowMs());
+					}
 				}
 				Thread.sleep(2000);
 				sdMoments.add(session.nowMs());
@@ -310,7 +313,10 @@ public class HilScenariosTest {
 			// Loss around SD logging start/stop is reported, not failed: with no parser error and
 			// logging starting, the unit itself did not send those samples while it opened or closed
 			// its file, which is firmware behaviour for the firmware HIL bench to judge. Loss around a
-			// battery read, or anywhere else, is the Android API's.
+			// battery read, or anywhere else, is the Android API's. A start counts from both the
+			// command and the unit confirming it: the unit pauses 0.35 to 0.71 s after it confirms,
+			// which is up to 1.17 s after the command on the first start (a Shimmer3 on LogAndStream
+			// v1.1.7), so a window around the command alone missed that pause.
 			int[] attributed = a.attribute(new double[][] {toArray(sdMoments), toArray(batteryMoments)}, 1000);
 			int nearSd = attributed[0];
 			int nearBattery = attributed[1];
@@ -412,9 +418,12 @@ public class HilScenariosTest {
 					sdMoments.add(session.nowMs());
 					report.check(session.stopSdLogging() && session.startSdLogging(),
 							what + ": stopSDLogging or startSDLogging did not complete (see the events)");
-					report.check(session.waitFor(() -> session.state() == BT_STATE.STREAMING_AND_SDLOGGING && session.queuedInstructions() == 0, 5000),
-							what + ": logging did not restart after a stop and a start back to back (state " + session.state()
-									+ ", " + session.queuedInstructions() + " instructions queued)");
+					boolean restarted = session.waitFor(() -> session.state() == BT_STATE.STREAMING_AND_SDLOGGING && session.queuedInstructions() == 0, 5000);
+					report.check(restarted, what + ": logging did not restart after a stop and a start back to back (state " + session.state()
+							+ ", " + session.queuedInstructions() + " instructions queued)");
+					if (restarted) {
+						sdMoments.add(session.nowMs());
+					}
 				}
 				Thread.sleep(1000);
 				sdMoments.add(session.nowMs());
@@ -540,6 +549,10 @@ public class HilScenariosTest {
 		boolean started = session.startSdLogging()
 				&& session.waitFor(() -> session.state() == BT_STATE.STREAMING_AND_SDLOGGING && session.queuedInstructions() == 0, 5000);
 		report.check(started, what + ": SD logging did not start while streaming (state " + session.state() + "; is there an SD card?)");
+		if (started) {
+			// as in midStreamSet, the unit pauses its stream up to 0.71 s after it confirms a start
+			sdMoments.add(session.nowMs());
+		}
 		return started;
 	}
 
