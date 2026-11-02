@@ -11,3 +11,7 @@ This ShimmerSeriviceExample allows user to
 - Erase data in Verisense device
 - Disable logging in Verisense device
 - Data sync Verisense device
+
+## Releasing
+
+This app is published to Google Play as ShimmerCapture. [RELEASING.md](RELEASING.md) has every step, from raising the version to sending the release for review.

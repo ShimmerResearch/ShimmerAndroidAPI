@@ -134,7 +134,10 @@ rather than queueing.
 `.github/workflows/ci.yml` runs on every PR into master and every push to it. It builds the library
 and every example (`assembleDebug`), then runs the library's unit tests, against the default driver.
 No check is required to merge yet, so look at the result. `release.yml` is the dispatch-only Release
-Android API workflow; it dry-runs on any PR that changes it.
+Android API workflow; it dry-runs on any PR that changes it. `release-shimmercapture.yml` does the
+same for the ShimmerCapture app (`shimmerServiceExample`): a signed APK, a GitHub pre-release and a
+draft Google Play release. Its version comes from that module's `build.gradle`, so each release
+starts with an uprev PR; `shimmerServiceExample/RELEASING.md` is the step-by-step guide.
 
 ## Modules
 

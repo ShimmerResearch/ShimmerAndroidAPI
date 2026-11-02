@@ -3,7 +3,7 @@
 # "ShimmerCapture Android Release (shimmerServiceExample)", which did the same by hand in Android
 # Studio.
 #
-# How to release
+# How to release (the full guide is ShimmerAndroidInstrumentDriver/shimmerServiceExample/RELEASING.md)
 #   1. In a PR, as before, raise versionCode and versionName in shimmerServiceExample/build.gradle,
 #      and leave MainActivity.appReleaseType at PUBLIC. Merge it.
 #   2. Actions -> "Release ShimmerCapture" -> Run workflow (on master). The version is the
