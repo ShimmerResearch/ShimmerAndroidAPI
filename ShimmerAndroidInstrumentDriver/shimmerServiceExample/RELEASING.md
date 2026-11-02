@@ -49,13 +49,17 @@ Then, as before the workflow existed:
 
 ## 2. Optional: a dry run
 
-To check the signing and the version before publishing anything:
+To check the signing and the version, and to get the list of changes for the release notes, before
+publishing anything:
 
 1. **Actions** → **Release ShimmerCapture** → **Run workflow**.
 2. Branch `master`, tick **dry_run**, then **Run workflow**.
 
 A dry run does everything up to the signed APK and stops. Open the run to check:
 
+- The run's **summary** page lists every PR merged since the last ShimmerCapture release: the same
+  list the GitHub release's notes will have. Write the Play release notes from it (see
+  *Writing whats_new* below).
 - **build** → *Collect and check the APK* prints the APK's `versionCode` and `versionName`, and its
   `certificate SHA-256 digest` (apksigner labels the line `V2 Signer:` or `Signer #1`). It must be
   the certificate every ShimmerCapture release has been signed with:
@@ -76,6 +80,28 @@ A dry run does everything up to the signed APK and stops. Open the run to check:
 
 A dry run can be started from any branch, so it is also the way to try an uprev before merging it.
 
+### Writing whats_new
+
+The GitHub release gets its notes automatically: every PR since the last release. The Play release
+notes (`whats_new`) are for users, at most 500 characters, so they are written by hand from that
+list. Most PRs (CI, HIL tests, docs, release tooling) do not change the app: keep the ones users
+notice, in plain words, one bullet each. For example, 1.3.4's:
+
+```
+• Connecting over Bluetooth LE no longer freezes the app while the link is set up
+• A device is shown as ready only once it has fully connected
+• More reliable streaming: fixes for device replies and acknowledgements that could be lost or misread
+• Fixed a crash when a device disconnected while a command was being sent
+• Updated Shimmer device library (0.11.12)
+```
+
+Without a dry run, the same list is one command away. It creates nothing; put in the version being
+released and the last one:
+
+```bash
+gh api repos/ShimmerResearch/ShimmerAndroidAPI/releases/generate-notes -f tag_name=ShimmerCapture_v1.3.5 -f target_commitish=master -f previous_tag_name=ShimmerCapture_v1.3.4 --jq .body
+```
+
 ## 3. Run the release
 
 1. **Actions** → **Release ShimmerCapture** → **Run workflow**.
@@ -85,7 +111,7 @@ A dry run can be started from any branch, so it is also the way to try an uprev 
    |---|---|
    | Use workflow from | `master` (a release refuses any other branch) |
    | google_play | ticked, to put a draft release in Google Play. Unticked = GitHub release only |
-   | whats_new | the Play release notes, in English, at most 500 characters. Blank = "Bug fixes and improvements." Copying the previous release's notes and editing them works well |
+   | whats_new | the Play release notes, in English, at most 500 characters. Blank = "Bug fixes and improvements." See *Writing whats_new* above |
    | dry_run | unticked |
 
 3. **Run workflow**, and wait for the three jobs, about 10 minutes:

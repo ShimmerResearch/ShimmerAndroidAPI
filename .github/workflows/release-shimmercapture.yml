@@ -16,8 +16,9 @@
 #
 # One run does, in order, and creates nothing public until the APK has built and is signed:
 #   build    reads the version; fails if it is already tagged, if versionCode did not go up since the
-#            last ShimmerCapture release, or if the app is not set to PUBLIC; builds the signed
-#            release APK. Read-only (no keystore without it): it also runs, unsigned, on PRs.
+#            last ShimmerCapture release, or if the app is not set to PUBLIC; lists the PRs since
+#            that release in the run summary, to write whats_new from; builds the signed release
+#            APK. Read-only (no keystore without it): it also runs, unsigned, on PRs.
 #   release  tags ShimmerCapture_v<version> on the commit it built and creates the GitHub
 #            pre-release with the APK and notes since the previous ShimmerCapture release.
 #            Pre-release, so the Android API release stays "Latest", as before.
@@ -41,7 +42,7 @@
 # GITHUB_TOKEN, or PACKAGES_READ_TOKEN if that is ever refused.
 #
 # dry_run builds the signed APK (unsigned without the keystore) and keeps it as a workflow artifact,
-# from any branch, and publishes nothing. The workflow also dry-runs on any PR that changes this file.
+# from any branch, and publishes nothing. Its summary lists the changes for whats_new. The workflow also dry-runs on any PR that changes this file.
 
 name: Release ShimmerCapture
 
@@ -79,6 +80,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      pull-requests: read # PR titles, for the changes list in the run summary
     env:
       DRY_RUN: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run }}
       # Read by the repositories in the root build.gradle to resolve the driver.
@@ -158,6 +160,32 @@ jobs:
           echo "driver=$DRIVER"
         } >> "$GITHUB_OUTPUT"
         echo "Releasing ShimmerCapture $VERSION (versionCode $VERSION_CODE) as $TAG against driver ${DRIVER:-unknown}; notes since ${PREVIOUS_TAG:-the first commit}"
+
+    # The material for the Play release notes (whats_new), so a dry run shows it before the real
+    # run. Same PRs as the GitHub release's generated notes, which this read-only job cannot call:
+    # every merged PR since the last ShimmerCapture tag, including those merged into a branch that
+    # later reached master. Squash merges are matched by their "(#N)" suffix.
+    - name: List the changes since the last release
+      continue-on-error: true # only informs; never blocks a release
+      working-directory: .
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PREVIOUS_TAG: ${{ steps.version.outputs.previous_tag }}
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        range=${PREVIOUS_TAG:+refs/tags/$PREVIOUS_TAG..}HEAD
+        numbers=$(git log --reverse --format=%s "$range" \
+          | sed -nE 's/^Merge pull request #([0-9]+) .*/\1/p; s/.*\(#([0-9]+)\)$/\1/p' | awk '!seen[$0]++')
+        {
+          echo "### Changes in ShimmerCapture $VERSION since ${PREVIOUS_TAG:-the first commit}"
+          echo
+          echo "Pick the ones users notice for the Play release notes (whats_new, 500 characters max)."
+          echo
+          for n in $numbers; do
+            gh api "repos/$GITHUB_REPOSITORY/pulls/$n" --jq '"* \(.title) (#\(.number))"' || echo "* #$n"
+          done
+          [ -n "$numbers" ] || echo "No merged PRs found."
+        } >> "$GITHUB_STEP_SUMMARY"
 
     # Decoded before building so a missing keystore fails in seconds. The keystore is written
     # outside the checkout, and the step that uses it deletes it. Never on a PR: the build runs the
