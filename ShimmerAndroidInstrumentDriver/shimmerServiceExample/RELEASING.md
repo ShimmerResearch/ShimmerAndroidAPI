@@ -56,10 +56,21 @@ To check the signing and the version before publishing anything:
 
 A dry run does everything up to the signed APK and stops. Open the run to check:
 
-- **build** → *Collect and check the APK* prints the APK's `versionCode` and `versionName`, and
-  `V2 Signer: certificate SHA-256 digest`. That digest must match Play Console → ShimmerCapture →
-  *Test and release* → *App integrity* → **Upload key certificate**, which shows it in capitals with
-  colons (`5F:35:3C:…`). If it doesn't match, Play rejects the upload.
+- **build** → *Collect and check the APK* prints the APK's `versionCode` and `versionName`, and its
+  `certificate SHA-256 digest` (apksigner labels the line `V2 Signer:` or `Signer #1`). It must be
+  the certificate every ShimmerCapture release has been signed with:
+
+  ```
+  CN=Shimmer
+  SHA-256 5f353cb90d2452e2d83309837a57b72950003e1470d873899a573e2441123e19
+  ```
+
+  ShimmerCapture is **not** enrolled in Play App Signing, so Play has no separate upload key: it
+  accepts an update only if it is signed by the same key as the APKs already published, and rejects
+  it otherwise. To check against Play itself, download the current APK from Play Console →
+  ShimmerCapture → *Test and release* → *App bundle explorer* → its version code → *Downloads*, and
+  run `apksigner verify --print-certs` on it. Do not choose any option on *Protected with Play* →
+  *Manage Play app signing* as part of a release: enrolling cannot be undone.
 - The APK itself is on the run page under **Artifacts** (`shimmercapture-apk`), to install on a test
   device.
 
