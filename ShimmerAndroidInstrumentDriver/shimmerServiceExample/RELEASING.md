@@ -57,9 +57,9 @@ To check the signing and the version before publishing anything:
 A dry run does everything up to the signed APK and stops. Open the run to check:
 
 - **build** → *Collect and check the APK* prints the APK's `versionCode` and `versionName`, and
-  `Signer #1 certificate SHA-256 digest`. That digest must match Play Console → ShimmerCapture →
-  *Test and release* → *App integrity* → **Upload key certificate**. If it doesn't, Play rejects the
-  upload.
+  `V2 Signer: certificate SHA-256 digest`. That digest must match Play Console → ShimmerCapture →
+  *Test and release* → *App integrity* → **Upload key certificate**, which shows it in capitals with
+  colons (`5F:35:3C:…`). If it doesn't match, Play rejects the upload.
 - The APK itself is on the run page under **Artifacts** (`shimmercapture-apk`), to install on a test
   device.
 
