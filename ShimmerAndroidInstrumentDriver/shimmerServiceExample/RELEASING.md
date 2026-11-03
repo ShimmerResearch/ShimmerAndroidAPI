@@ -49,21 +49,60 @@ Then, as before the workflow existed:
 
 ## 2. Optional: a dry run
 
-To check the signing and the version before publishing anything:
+To check the signing and the version, and to get the list of changes for the release notes, before
+publishing anything:
 
 1. **Actions** → **Release ShimmerCapture** → **Run workflow**.
 2. Branch `master`, tick **dry_run**, then **Run workflow**.
 
 A dry run does everything up to the signed APK and stops. Open the run to check:
 
+- The run's **summary** page lists the PRs merged since the last ShimmerCapture release, found from
+  the merge commits between that release's tag and the commit being built. Write the Play release
+  notes from it (see *Writing whats_new* below).
 - **build** → *Collect and check the APK* prints the APK's `versionCode` and `versionName`, and
-  `Signer #1 certificate SHA-256 digest`. That digest must match Play Console → ShimmerCapture →
-  *Test and release* → *App integrity* → **Upload key certificate**. If it doesn't, Play rejects the
-  upload.
+  **checks its signing certificate**: the run fails, before anything is tagged or uploaded, unless
+  the APK is signed with the key every ShimmerCapture release has used (`CN=Shimmer`, SHA-256
+  `5f353cb9…41123e19`, in the workflow as `RELEASE_CERT_SHA256`).
+
+  ShimmerCapture is **not** enrolled in Play App Signing, so Play has no separate upload key: it
+  accepts an update only if it is signed by the same key as the APKs already published. If the check
+  fails, the `SHIMMERCAPTURE_KEYSTORE_*` secrets hold a different keystore. To compare with Play
+  itself, download the current APK from Play Console → ShimmerCapture → *Test and release* →
+  *App bundle explorer* → its version code → *Downloads*, and run `apksigner verify --print-certs` on
+  it. Do not choose any option on *Protected with Play* → *Manage Play app signing* as part of a
+  release: enrolling cannot be undone.
 - The APK itself is on the run page under **Artifacts** (`shimmercapture-apk`), to install on a test
   device.
 
 A dry run can be started from any branch, so it is also the way to try an uprev before merging it.
+
+### Writing whats_new
+
+The GitHub release gets its notes automatically: every PR since the last release. The Play release
+notes (`whats_new`) are for users, at most 500 characters, so they are written by hand from that
+list. Most PRs (CI, HIL tests, docs, release tooling) do not change the app: keep the ones users
+notice, in plain words, one bullet each. For example, 1.3.4's:
+
+```
+• Connecting over Bluetooth LE no longer freezes the app while the link is set up
+• A device is shown as ready only once it has fully connected
+• More reliable streaming: fixes for device replies and acknowledgements that could be lost or misread
+• Fixed a crash when a device disconnected while a command was being sent
+• Updated Shimmer device library (0.11.12)
+```
+
+Without a dry run, GitHub's own notes preview is one command away. It creates nothing; put in the
+version being released and the last one:
+
+```bash
+gh api repos/ShimmerResearch/ShimmerAndroidAPI/releases/generate-notes -f tag_name=ShimmerCapture_v1.3.5 -f target_commitish=master -f previous_tag_name=ShimmerCapture_v1.3.4 --jq .body
+```
+
+Both lists are of `master` as it is when you look. If a PR merges before the release run, it is in
+the APK but not in your notes: look again just before running. The two lists also find PRs
+differently (merge commits, against GitHub's own commit-to-PR links), so they can differ, e.g. for
+a squash-merged PR.
 
 ## 3. Run the release
 
@@ -74,7 +113,7 @@ A dry run can be started from any branch, so it is also the way to try an uprev 
    |---|---|
    | Use workflow from | `master` (a release refuses any other branch) |
    | google_play | ticked, to put a draft release in Google Play. Unticked = GitHub release only |
-   | whats_new | the Play release notes, in English, at most 500 characters. Blank = "Bug fixes and improvements." Copying the previous release's notes and editing them works well |
+   | whats_new | the Play release notes, in English, at most 500 characters. Blank = "Bug fixes and improvements." See *Writing whats_new* above |
    | dry_run | unticked |
 
 3. **Run workflow**, and wait for the three jobs, about 10 minutes:
@@ -122,6 +161,7 @@ already created is not created twice.
 | `versionCode N is not higher than M` | `versionName` was raised but `versionCode` wasn't. Raise it in a new uprev PR |
 | `MainActivity.appReleaseType is …, not PUBLIC` | Set it back to `PUBLIC` in a PR |
 | `No SHIMMERCAPTURE_KEYSTORE_BASE64 secret` | The signing secrets are missing. See *Secrets* below |
+| `The APK is not signed with the ShimmerCapture release key` | The keystore secret holds a different key from the one Play knows. Nothing was published. Replace `SHIMMERCAPTURE_KEYSTORE_BASE64` (and its passwords and alias) with the original keystore, see *Secrets* below |
 | `The APK does not carry versionName …` | The build didn't pick up `build.gradle`'s values. Check for a version override in Gradle files |
 | **play**: `No GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret` | The Play secret is missing. The GitHub release is done; upload by hand (step 4), or add the secret and re-run the job |
 | **play**: `The caller does not have permission` | The service account lacks access to ShimmerCapture in Play Console, or was just added: new permissions can take a day. Re-run the play job later |

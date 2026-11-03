@@ -16,8 +16,9 @@
 #
 # One run does, in order, and creates nothing public until the APK has built and is signed:
 #   build    reads the version; fails if it is already tagged, if versionCode did not go up since the
-#            last ShimmerCapture release, or if the app is not set to PUBLIC; builds the signed
-#            release APK. Read-only (no keystore without it): it also runs, unsigned, on PRs.
+#            last ShimmerCapture release, or if the app is not set to PUBLIC; lists the PRs since
+#            that release in the run summary, to write whats_new from; builds the signed release
+#            APK. Read-only (no keystore without it): it also runs, unsigned, on PRs.
 #   release  tags ShimmerCapture_v<version> on the commit it built and creates the GitHub
 #            pre-release with the APK and notes since the previous ShimmerCapture release.
 #            Pre-release, so the Android API release stays "Latest", as before.
@@ -41,7 +42,8 @@
 # GITHUB_TOKEN, or PACKAGES_READ_TOKEN if that is ever refused.
 #
 # dry_run builds the signed APK (unsigned without the keystore) and keeps it as a workflow artifact,
-# from any branch, and publishes nothing. The workflow also dry-runs on any PR that changes this file.
+# from any branch, and publishes nothing. Its summary lists the changes for whats_new. The workflow
+# also dry-runs on any PR that changes this file.
 
 name: Release ShimmerCapture
 
@@ -79,6 +81,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      pull-requests: read # PR titles, for the changes list in the run summary
     env:
       DRY_RUN: ${{ github.event_name != 'workflow_dispatch' || inputs.dry_run }}
       # Read by the repositories in the root build.gradle to resolve the driver.
@@ -119,8 +122,22 @@ jobs:
         fi
         TAG="ShimmerCapture_v$VERSION"
 
-        PREVIOUS_TAG=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName,createdAt \
-          --jq '[.[] | select(.tagName | startswith("ShimmerCapture_v"))] | sort_by(.createdAt) | last | .tagName // ""')
+        # The newest published ShimmerCapture release whose tag still exists. A draft, or a release
+        # whose tag was deleted, has no tag to compare against: the versionCode check below and
+        # the changes list would then silently compare against nothing.
+        # An assignment, so -e stops the step if gh fails: inside "for … in $(…)" a failure is ignored,
+        # and the versionCode check would be skipped.
+        releases=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName,createdAt,isDraft \
+          --jq '[.[] | select((.tagName | startswith("ShimmerCapture_v")) and (.isDraft | not))]
+                | sort_by(.createdAt) | reverse | .[].tagName')
+        PREVIOUS_TAG=
+        for t in $releases; do
+          if git rev-parse -q --verify "refs/tags/$t" >/dev/null; then
+            PREVIOUS_TAG=$t
+            break
+          fi
+          echo "::warning::The $t release has no tag, so it is skipped as the previous release."
+        done
 
         fail() {
           if [ "$DRY_RUN" = true ]; then
@@ -158,6 +175,51 @@ jobs:
           echo "driver=$DRIVER"
         } >> "$GITHUB_OUTPUT"
         echo "Releasing ShimmerCapture $VERSION (versionCode $VERSION_CODE) as $TAG against driver ${DRIVER:-unknown}; notes since ${PREVIOUS_TAG:-the first commit}"
+
+    # The material for the Play release notes (whats_new), so a dry run shows it before the real
+    # run. The GitHub release's generated notes need write access this job does not have, so the
+    # PRs are found from the merge commits ("Merge pull request #N …") since the last
+    # ShimmerCapture tag, including PRs merged into a branch that later reached master. This repo
+    # merges with merge commits; a squash-merged PR would not be listed.
+    - name: List the changes since the last release
+      continue-on-error: true # only informs; never blocks a release
+      working-directory: .
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PREVIOUS_TAG: ${{ steps.version.outputs.previous_tag }}
+        VERSION: ${{ steps.version.outputs.version }}
+      run: |
+        set -o pipefail # a failing git log must not read as "no PRs"
+        summary() { echo "$1" >> "$GITHUB_STEP_SUMMARY"; }
+        summary "### Changes in ShimmerCapture $VERSION since ${PREVIOUS_TAG:-the first commit}"
+        summary ""
+        range=${PREVIOUS_TAG:+refs/tags/$PREVIOUS_TAG..}HEAD
+        if ! numbers=$(git log --reverse --format=%s "$range" \
+            | sed -nE 's/^Merge pull request #([0-9]+) .*/\1/p' | awk '!seen[$0]++'); then
+          echo "::warning::Could not list the commits in $range."
+          summary "Could not list the changes: \`git log $range\` failed. See this step's log."
+          exit 1
+        fi
+        if [ -z "$numbers" ]; then
+          summary "No PRs merged since ${PREVIOUS_TAG:-the first commit}."
+          exit 0
+        fi
+        # Every title in one GraphQL request, rather than one REST call per PR.
+        query="query(\$owner: String!, \$name: String!) { repository(owner: \$owner, name: \$name) {"
+        for n in $numbers; do query+=" pr$n: pullRequest(number: $n) { number title }"; done
+        query+=" } }"
+        # jq runs separately: when any PR in the query can't be resolved, gh exits 1 and prints the
+        # raw response without applying --jq, though every other title in it is there.
+        resp=$(gh api graphql -f query="$query" -F owner="${GITHUB_REPOSITORY%/*}" \
+          -F name="${GITHUB_REPOSITORY#*/}") || echo "::warning::Some PR titles could not be read."
+        titles=$(jq -r '.data.repository // {} | .[] | select(.) | "\(.number)\t\(.title)"' <<<"$resp") \
+          || titles=
+        summary "Pick the ones users notice for the Play release notes (whats_new, 500 characters max)."
+        summary ""
+        for n in $numbers; do
+          title=$(awk -F'\t' -v n="$n" '$1 == n { print $2; exit }' <<<"$titles")
+          summary "* ${title:-(title not found)} (#$n)"
+        done
 
     # Decoded before building so a missing keystore fails in seconds. The keystore is written
     # outside the checkout, and the step that uses it deletes it. Never on a PR: the build runs the
@@ -222,6 +284,10 @@ jobs:
         VERSION: ${{ steps.version.outputs.version }}
         VERSION_CODE: ${{ steps.version.outputs.version_code }}
         SIGNED: ${{ steps.keystore.outputs.signed }}
+        # SHA-256 of the certificate every ShimmerCapture release on Google Play is signed with
+        # (CN=Shimmer). The app is not enrolled in Play App Signing, so Play accepts only APKs signed
+        # by this key. Change it only if the app's signing key itself changes.
+        RELEASE_CERT_SHA256: 5f353cb90d2452e2d83309837a57b72950003e1470d873899a573e2441123e19
       run: |
         out=shimmerServiceExample/build/outputs/apk/release
         ls -l "$out"
@@ -242,8 +308,16 @@ jobs:
           echo "::error::The APK does not carry versionName $VERSION and versionCode $VERSION_CODE."
           exit 1
         fi
+        # Before anything is tagged or uploaded: a wrong or replaced keystore secret would otherwise
+        # be caught only by Play, after the tag and GitHub release are public.
         if [ "$SIGNED" = true ]; then
-          "$build_tools/apksigner" verify --print-certs "../release-assets/$name"
+          certs=$("$build_tools/apksigner" verify --print-certs "../release-assets/$name")
+          echo "$certs"
+          if ! grep -qi "certificate SHA-256 digest: $RELEASE_CERT_SHA256" <<<"$certs"; then
+            echo "::error::The APK is not signed with the ShimmerCapture release key (SHA-256 $RELEASE_CERT_SHA256). Check the SHIMMERCAPTURE_KEYSTORE_* secrets."
+            exit 1
+          fi
+          echo "Signed with the ShimmerCapture release key."
         fi
         echo "apk=$name" >> "$GITHUB_OUTPUT"
 
