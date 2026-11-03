@@ -57,24 +57,21 @@ publishing anything:
 
 A dry run does everything up to the signed APK and stops. Open the run to check:
 
-- The run's **summary** page lists every PR merged since the last ShimmerCapture release: the same
-  list the GitHub release's notes will have. Write the Play release notes from it (see
-  *Writing whats_new* below).
-- **build** → *Collect and check the APK* prints the APK's `versionCode` and `versionName`, and its
-  `certificate SHA-256 digest` (apksigner labels the line `V2 Signer:` or `Signer #1`). It must be
-  the certificate every ShimmerCapture release has been signed with:
-
-  ```
-  CN=Shimmer
-  SHA-256 5f353cb90d2452e2d83309837a57b72950003e1470d873899a573e2441123e19
-  ```
+- The run's **summary** page lists the PRs merged since the last ShimmerCapture release, found from
+  the merge commits between that release's tag and the commit being built. Write the Play release
+  notes from it (see *Writing whats_new* below).
+- **build** → *Collect and check the APK* prints the APK's `versionCode` and `versionName`, and
+  **checks its signing certificate**: the run fails, before anything is tagged or uploaded, unless
+  the APK is signed with the key every ShimmerCapture release has used (`CN=Shimmer`, SHA-256
+  `5f353cb9…41123e19`, in the workflow as `RELEASE_CERT_SHA256`).
 
   ShimmerCapture is **not** enrolled in Play App Signing, so Play has no separate upload key: it
-  accepts an update only if it is signed by the same key as the APKs already published, and rejects
-  it otherwise. To check against Play itself, download the current APK from Play Console →
-  ShimmerCapture → *Test and release* → *App bundle explorer* → its version code → *Downloads*, and
-  run `apksigner verify --print-certs` on it. Do not choose any option on *Protected with Play* →
-  *Manage Play app signing* as part of a release: enrolling cannot be undone.
+  accepts an update only if it is signed by the same key as the APKs already published. If the check
+  fails, the `SHIMMERCAPTURE_KEYSTORE_*` secrets hold a different keystore. To compare with Play
+  itself, download the current APK from Play Console → ShimmerCapture → *Test and release* →
+  *App bundle explorer* → its version code → *Downloads*, and run `apksigner verify --print-certs` on
+  it. Do not choose any option on *Protected with Play* → *Manage Play app signing* as part of a
+  release: enrolling cannot be undone.
 - The APK itself is on the run page under **Artifacts** (`shimmercapture-apk`), to install on a test
   device.
 
@@ -95,12 +92,17 @@ notice, in plain words, one bullet each. For example, 1.3.4's:
 • Updated Shimmer device library (0.11.12)
 ```
 
-Without a dry run, the same list is one command away. It creates nothing; put in the version being
-released and the last one:
+Without a dry run, GitHub's own notes preview is one command away. It creates nothing; put in the
+version being released and the last one:
 
 ```bash
 gh api repos/ShimmerResearch/ShimmerAndroidAPI/releases/generate-notes -f tag_name=ShimmerCapture_v1.3.5 -f target_commitish=master -f previous_tag_name=ShimmerCapture_v1.3.4 --jq .body
 ```
+
+Both lists are of `master` as it is when you look. If a PR merges before the release run, it is in
+the APK but not in your notes: look again just before running. The two lists also find PRs
+differently (merge commits, against GitHub's own commit-to-PR links), so they can differ, e.g. for
+a squash-merged PR.
 
 ## 3. Run the release
 
@@ -159,6 +161,7 @@ already created is not created twice.
 | `versionCode N is not higher than M` | `versionName` was raised but `versionCode` wasn't. Raise it in a new uprev PR |
 | `MainActivity.appReleaseType is …, not PUBLIC` | Set it back to `PUBLIC` in a PR |
 | `No SHIMMERCAPTURE_KEYSTORE_BASE64 secret` | The signing secrets are missing. See *Secrets* below |
+| `The APK is not signed with the ShimmerCapture release key` | The keystore secret holds a different key from the one Play knows. Nothing was published. Replace `SHIMMERCAPTURE_KEYSTORE_BASE64` (and its passwords and alias) with the original keystore, see *Secrets* below |
 | `The APK does not carry versionName …` | The build didn't pick up `build.gradle`'s values. Check for a version override in Gradle files |
 | **play**: `No GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret` | The Play secret is missing. The GitHub release is done; upload by hand (step 4), or add the secret and re-run the job |
 | **play**: `The caller does not have permission` | The service account lacks access to ShimmerCapture in Play Console, or was just added: new permissions can take a day. Re-run the play job later |
