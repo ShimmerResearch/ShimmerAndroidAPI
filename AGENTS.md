@@ -61,6 +61,23 @@ what a release would: Release Java API (Shimmer-Java-Android-API's `release.yml`
 steps that stay manual: porting parser fixes, the Android HIL at master's new commit, and Release
 Android API.
 
+## Releasing
+
+**Release Android API** (`release.yml`) releases `master`. It refuses to build a commit that has no
+passing `android-hil (driver X)` status for the driver it builds against. `hil_waiver`, a Jira key
+recorded in the release notes, skips the check; it is the user's decision. So:
+
+1. If the driver changed, release the Java API first, and merge the driver-bump PR it opens here
+   with any parser fixes ported to `Shimmer.java` (above).
+2. On the bench, at master's new commit, run `tools/hil/run-android-hil.ps1 -Report`. See "Before
+   every Android release" in `tools/hil/README.md` for what it needs: the phone, a Shimmer3 and a
+   Shimmer3R, over Classic and BLE.
+3. Run **Release Android API** on `master`, leaving `driver_version` blank for the newest Java API
+   release, which is also what the HIL picks.
+
+Any merge after step 2, docs or test code included, moves `master` to a commit with no result, so
+run the HIL again.
+
 ## Build
 
 **Build from `ShimmerAndroidInstrumentDriver/`, not the repo root** — that is where `settings.gradle`
