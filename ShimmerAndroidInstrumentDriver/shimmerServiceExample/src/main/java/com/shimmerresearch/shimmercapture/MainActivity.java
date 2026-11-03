@@ -37,6 +37,7 @@ import androidx.fragment.app.FragmentStatePagerAdapter;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 import androidx.appcompat.app.AppCompatActivity;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -100,7 +101,9 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
 
     final static String LOG_TAG = "Shimmer";
     final static String SERVICE_TAG = "ShimmerService";
+    final static int REQUEST_ENABLE_BT = 1;
     final static int REQUEST_CONNECT_SHIMMER = 2;
+    final static int REQUEST_PERMISSIONS = 110;
     public static APP_RELEASE_TYPE appReleaseType = APP_RELEASE_TYPE.PUBLIC;
     public enum APP_RELEASE_TYPE{
         INTERNAL,
@@ -185,7 +188,7 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
         }
         if (!permissionGranted) {
             // Should we show an explanation?
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT,Manifest.permission.BLUETOOTH_SCAN,Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION}, 110);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT,Manifest.permission.BLUETOOTH_SCAN,Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSIONS);
 
         } else {
             startServiceandBTManager();
@@ -274,8 +277,10 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
             @NonNull String[] permissions,
             @NonNull int[] grantResults
     ){
-        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT);
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        // Start the service whatever the answer, as requestPermissions() does when they are already
+        // granted. This used to start it only when BLUETOOTH_CONNECT was refused.
+        if (requestCode == REQUEST_PERMISSIONS) {
             startServiceandBTManager();
         }
     }
@@ -287,6 +292,27 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
         getApplicationContext().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
         Log.d(LOG_TAG, "Shimmer Service started");
         Toast.makeText(this, "Shimmer Service started", Toast.LENGTH_SHORT).show();
+        requestBluetoothEnableIfOff();
+    }
+
+    /**
+     * Asks the user to switch Bluetooth on if it is off. The service then has no BluetoothManager
+     * (it logs "Bluetooth not Enabled"); onActivityResult creates one once Bluetooth is on.
+     * @return true if Bluetooth is off, whether or not it could be asked for
+     */
+    private boolean requestBluetoothEnableIfOff() {
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null || adapter.isEnabled()) {
+            return false;
+        }
+        // From Android 12 the enable request needs BLUETOOTH_CONNECT, or it throws.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+            startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), REQUEST_ENABLE_BT);
+        } else {
+            Toast.makeText(this, "Bluetooth is off. Turn it on to connect to a device.", Toast.LENGTH_LONG).show();
+        }
+        return true;
     }
 
     @Override
@@ -351,6 +377,9 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
         final Toast otherTaskOngoingToast = Toast.makeText(this, "Please wait until current task is finished", Toast.LENGTH_LONG);
         int id = item.getItemId();
         if(id == R.id.connect_device){
+            if (requestBluetoothEnableIfOff()) {
+                return true;    //Nothing to connect to until Bluetooth is on
+            }
             Intent pairedDevicesIntent = new Intent(getApplicationContext(), ShimmerBluetoothDialog.class);
             startActivityForResult(pairedDevicesIntent, REQUEST_CONNECT_SHIMMER);
             return true;
@@ -720,18 +749,17 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
                     */
                 }
             }
-        if (requestCode == 1) { //The system Bluetooth enable dialog has returned a result
+        if (requestCode == REQUEST_ENABLE_BT) { //The system Bluetooth enable dialog has returned a result
             if (resultCode == RESULT_OK) {
-                Intent intent = new Intent(this, ShimmerService.class);
-                startService(intent);
-                getApplicationContext().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-                Log.d(LOG_TAG, "Shimmer Service started");
-                Toast.makeText(this, "Shimmer Service started", Toast.LENGTH_SHORT).show();
+                //If Bluetooth was off when the service was created, it has no BluetoothManager yet.
+                //ensureBluetoothManager() keeps one it already has (Bluetooth was only switched off
+                //later), so nothing holding it is orphaned. If the service is not bound yet,
+                //connecting creates the manager instead.
+                if (mService != null) {
+                    mService.ensureBluetoothManager();
+                }
             } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Please enable Bluetooth to proceed.", Toast.LENGTH_LONG).show();
-                int REQUEST_ENABLE_BT = 1;
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                Toast.makeText(this, "Bluetooth is off. Turn it on to connect to a device.", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(this, "Unknown Error! Your device may not support Bluetooth!", Toast.LENGTH_LONG).show();
             }

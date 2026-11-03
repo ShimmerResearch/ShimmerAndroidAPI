@@ -187,11 +187,29 @@ public class ShimmerService extends Service {
 	public void onDestroy() {
 		Toast.makeText(this, "Shimmer Service Stopped", Toast.LENGTH_LONG).show();
 		Log.d(TAG, "onDestroy");
-		btManager.disconnectAllDevices();
+		if (btManager != null) {
+			btManager.disconnectAllDevices();
+		}
+	}
+
+	/**
+	 * btManager is null when Bluetooth was off as the service was created (onCreate logs "Bluetooth
+	 * not Enabled"). Creates it if Bluetooth has been switched on since; an existing one is kept, so
+	 * whatever holds it from getBluetoothManager() still matches the service. Call this rather than
+	 * createNewBluetoothManager() once Bluetooth comes on.
+	 * @return whether there is a BluetoothManager to use
+	 */
+	public boolean ensureBluetoothManager() {
+		if (btManager == null) {
+			createNewBluetoothManager();
+		}
+		return btManager != null;
 	}
 
 	public void disconnectAllDevices(){
-		btManager.disconnectAllDevices();
+		if (btManager != null) {
+			btManager.disconnectAllDevices();
+		}
 		mMultiShimmer.clear();
 		mLogShimmer.clear();
 	}
@@ -255,14 +273,17 @@ public class ShimmerService extends Service {
 	}
 
 	public void connectShimmer(final String bluetoothAddress,Context context){
+		if (!ensureBluetoothManager()) return;
 		btManager.connectShimmerThroughBTAddress(bluetoothAddress,"",context);
 	}
 
 	public void connectShimmer(final String bluetoothAddress,final String deviceName, Context context){
+		if (!ensureBluetoothManager()) return;
 		btManager.connectShimmerThroughBTAddress(bluetoothAddress,deviceName,context);
 	}
 
 	public void connectShimmer(final String bluetoothAddress,final String deviceName, ShimmerBluetoothManagerAndroid.BT_TYPE preferredBtType, Context context){
+		if (!ensureBluetoothManager()) return;
 		boolean isVerisense = false;
 		if (deviceName!=null){
 			if (deviceName.contains(VerisenseDevice.VERISENSE_PREFIX)) {
@@ -281,6 +302,7 @@ public class ShimmerService extends Service {
 	}
 
 	public void connectShimmer(final String bluetoothAddress){
+		if (!ensureBluetoothManager()) return;
 		btManager.connectShimmerThroughBTAddress(bluetoothAddress);
 	}
 
@@ -288,7 +310,9 @@ public class ShimmerService extends Service {
 		Toast.makeText(this, "My Service Stopped", Toast.LENGTH_LONG).show();
 		Log.d(TAG, "onDestroy");
 
-		btManager.disconnectAllDevices();
+		if (btManager != null) {
+			btManager.disconnectAllDevices();
+		}
 	}
 
 	/**
@@ -1201,7 +1225,7 @@ public class ShimmerService extends Service {
 	}
 
 	public ShimmerDevice getShimmer(String bluetoothAddress){
-		return btManager.getShimmer(bluetoothAddress);
+		return btManager == null ? null : btManager.getShimmer(bluetoothAddress);
 	}
 
 	public void test(){
@@ -1310,7 +1334,8 @@ public class ShimmerService extends Service {
 	}
 
 	public List<ShimmerDevice> getListOfConnectedDevices() {
-		return btManager.getListOfConnectedDevices();
+		// No BluetoothManager (Bluetooth was off when the service started) means no devices.
+		return btManager == null ? new ArrayList<ShimmerDevice>() : btManager.getListOfConnectedDevices();
 	}
 
 	public void configureShimmer(ShimmerDevice device) {
@@ -1330,6 +1355,7 @@ public class ShimmerService extends Service {
 
 		try {
 			btManager = new ShimmerBluetoothManagerAndroid(this, mHandler);
+			Log.d(TAG, "Bluetooth Manager created");
 		} catch (Exception e) {
 			Log.e(TAG, "ERROR! " + e);
 			Toast.makeText(this, "Error! Could not create Bluetooth Manager!", Toast.LENGTH_LONG).show();
