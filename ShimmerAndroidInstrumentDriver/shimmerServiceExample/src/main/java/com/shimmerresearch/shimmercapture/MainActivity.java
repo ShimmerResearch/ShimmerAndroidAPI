@@ -103,6 +103,7 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
     final static String SERVICE_TAG = "ShimmerService";
     final static int REQUEST_ENABLE_BT = 1;
     final static int REQUEST_CONNECT_SHIMMER = 2;
+    final static int REQUEST_PERMISSIONS = 110;
     public static APP_RELEASE_TYPE appReleaseType = APP_RELEASE_TYPE.PUBLIC;
     public enum APP_RELEASE_TYPE{
         INTERNAL,
@@ -187,7 +188,7 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
         }
         if (!permissionGranted) {
             // Should we show an explanation?
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT,Manifest.permission.BLUETOOTH_SCAN,Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION}, 110);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT,Manifest.permission.BLUETOOTH_SCAN,Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSIONS);
 
         } else {
             startServiceandBTManager();
@@ -279,7 +280,7 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         // Start the service whatever the answer, as requestPermissions() does when they are already
         // granted. This used to start it only when BLUETOOTH_CONNECT was refused.
-        if (requestCode == 110) {
+        if (requestCode == REQUEST_PERMISSIONS) {
             startServiceandBTManager();
         }
     }
@@ -750,10 +751,12 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
             }
         if (requestCode == REQUEST_ENABLE_BT) { //The system Bluetooth enable dialog has returned a result
             if (resultCode == RESULT_OK) {
-                //The service is already running, but without a BluetoothManager: Bluetooth was off
-                //when it was created. If it is not bound yet, connecting creates one instead.
+                //If Bluetooth was off when the service was created, it has no BluetoothManager yet.
+                //ensureBluetoothManager() keeps one it already has (Bluetooth was only switched off
+                //later), so nothing holding it is orphaned. If the service is not bound yet,
+                //connecting creates the manager instead.
                 if (mService != null) {
-                    mService.createNewBluetoothManager();
+                    mService.ensureBluetoothManager();
                 }
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Bluetooth is off. Turn it on to connect to a device.", Toast.LENGTH_LONG).show();

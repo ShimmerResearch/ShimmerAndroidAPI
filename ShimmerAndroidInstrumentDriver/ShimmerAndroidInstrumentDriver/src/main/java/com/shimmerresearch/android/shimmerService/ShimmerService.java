@@ -194,10 +194,12 @@ public class ShimmerService extends Service {
 
 	/**
 	 * btManager is null when Bluetooth was off as the service was created (onCreate logs "Bluetooth
-	 * not Enabled"). Creates it if Bluetooth has been switched on since.
+	 * not Enabled"). Creates it if Bluetooth has been switched on since; an existing one is kept, so
+	 * whatever holds it from getBluetoothManager() still matches the service. Call this rather than
+	 * createNewBluetoothManager() once Bluetooth comes on.
 	 * @return whether there is a BluetoothManager to use
 	 */
-	private boolean ensureBluetoothManager() {
+	public boolean ensureBluetoothManager() {
 		if (btManager == null) {
 			createNewBluetoothManager();
 		}
@@ -308,7 +310,9 @@ public class ShimmerService extends Service {
 		Toast.makeText(this, "My Service Stopped", Toast.LENGTH_LONG).show();
 		Log.d(TAG, "onDestroy");
 
-		btManager.disconnectAllDevices();
+		if (btManager != null) {
+			btManager.disconnectAllDevices();
+		}
 	}
 
 	/**
