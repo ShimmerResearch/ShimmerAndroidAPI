@@ -125,10 +125,13 @@ jobs:
         # The newest published ShimmerCapture release whose tag still exists. A draft, or a release
         # whose tag was deleted, has no tag to compare against: the versionCode check below and
         # the changes list would then silently compare against nothing.
+        # An assignment, so -e stops the step if gh fails: inside "for … in $(…)" a failure is ignored,
+        # and the versionCode check would be skipped.
+        releases=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName,createdAt,isDraft \
+          --jq '[.[] | select((.tagName | startswith("ShimmerCapture_v")) and (.isDraft | not))]
+                | sort_by(.createdAt) | reverse | .[].tagName')
         PREVIOUS_TAG=
-        for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName,createdAt,isDraft \
-            --jq '[.[] | select((.tagName | startswith("ShimmerCapture_v")) and (.isDraft | not))]
-                  | sort_by(.createdAt) | reverse | .[].tagName'); do
+        for t in $releases; do
           if git rev-parse -q --verify "refs/tags/$t" >/dev/null; then
             PREVIOUS_TAG=$t
             break
@@ -205,9 +208,12 @@ jobs:
         query="query(\$owner: String!, \$name: String!) { repository(owner: \$owner, name: \$name) {"
         for n in $numbers; do query+=" pr$n: pullRequest(number: $n) { number title }"; done
         query+=" } }"
-        titles=$(gh api graphql -f query="$query" -F owner="${GITHUB_REPOSITORY%/*}" \
-          -F name="${GITHUB_REPOSITORY#*/}" --jq '.data.repository[] | select(.) | "\(.number)\t\(.title)"') \
-          || echo "::warning::Could not read the PR titles; listing numbers only."
+        # jq runs separately: when any PR in the query can't be resolved, gh exits 1 and prints the
+        # raw response without applying --jq, though every other title in it is there.
+        resp=$(gh api graphql -f query="$query" -F owner="${GITHUB_REPOSITORY%/*}" \
+          -F name="${GITHUB_REPOSITORY#*/}") || echo "::warning::Some PR titles could not be read."
+        titles=$(jq -r '.data.repository // {} | .[] | select(.) | "\(.number)\t\(.title)"' <<<"$resp") \
+          || titles=
         summary "Pick the ones users notice for the Play release notes (whats_new, 500 characters max)."
         summary ""
         for n in $numbers; do
