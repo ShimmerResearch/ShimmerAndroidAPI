@@ -23,8 +23,12 @@
         tools:remove="android:appComponentFactory"
         tools:targetApi="p">
         <service android:name="com.shimmerresearch.android.shimmerService.ShimmerService" />
+        <!-- From targetSdk 36, Android ignores screenOrientation on displays 600dp and wider, so
+             MainActivity rotates on tablets. configChanges keeps it from being recreated on each
+             rotation, which re-showed the location notice and leaked the previous one. -->
         <activity android:name="com.shimmerresearch.shimmercapture.MainActivity"
             android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

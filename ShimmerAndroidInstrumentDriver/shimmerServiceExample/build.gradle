@@ -7,8 +7,8 @@ android {
     defaultConfig {
         applicationId "com.shimmersensing.shimmerconnect"
         minSdkVersion 21
-        targetSdkVersion 35
-        versionCode 35
+        targetSdkVersion 36
+        versionCode 36
         versionName "1.3.4"
         multiDexEnabled true
 
