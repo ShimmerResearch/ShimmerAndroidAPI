@@ -14,7 +14,6 @@ import android.widget.ListView;
 import androidx.annotation.Nullable;
 
 import com.androidplot.xy.XYPlot;
-import com.shimmerresearch.android.manager.ShimmerBluetoothManagerAndroid;
 import com.shimmerresearch.android.shimmerService.ShimmerService;
 import com.shimmerresearch.androidinstrumentdriver.R;
 import com.shimmerresearch.driver.ShimmerDevice;
@@ -90,10 +89,10 @@ public class SignalsToPlotFragment extends ListFragment {
         this.context = context;
         shimmerService = service;
         dynamicPlot = plot;
-        ShimmerBluetoothManagerAndroid btManager = shimmerService.getBluetoothManager();
-        final ShimmerDevice device = btManager.getShimmer(bluetoothAddress);
+        // Null when the service has no BluetoothManager (Bluetooth off) or does not know the device
+        final ShimmerDevice device = shimmerService.getShimmer(bluetoothAddress);
 
-        if(device.isStreaming()) {
+        if(device != null && device.isStreaming()) {
 
             device.getListofEnabledChannelSignalsandFormats();
             channelsMap = device.getMapOfEnabledChannelsForStreaming();
