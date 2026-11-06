@@ -27,6 +27,7 @@ import com.androidplot.xy.XYPlot;
 import com.androidplot.xy.XYStepMode;
 import com.shimmerresearch.android.Shimmer;
 import com.shimmerresearch.android.shimmerService.ShimmerService;
+import com.shimmerresearch.android.manager.ShimmerBluetoothManagerAndroid;
 import com.shimmerresearch.androidinstrumentdriver.R;
 import com.shimmerresearch.bluetooth.ShimmerBluetooth;
 import com.shimmerresearch.driver.CallbackObject;
@@ -222,9 +223,11 @@ public class PlotFragment extends Fragment {
                             deviceState="Streaming";
                             textViewDeviceName.setText(mBluetoothAddress);
                             textViewDeviceState.setText(deviceState);
-                            List<String> sensorList = shimmerService.getBluetoothManager().getListofEnabledSensors(mBluetoothAddress);
+                            // No BluetoothManager (Bluetooth was off when the service started) means no sensor list
+                            ShimmerBluetoothManagerAndroid btManager = shimmerService.getBluetoothManager();
+                            List<String> sensorList = btManager == null ? null : btManager.getListofEnabledSensors(mBluetoothAddress);
                             if(sensorList!=null){
-                                if(shimmerService.getBluetoothManager().getShimmerVersion(mBluetoothAddress)== ShimmerVerDetails.HW_ID.SHIMMER_3){
+                                if(btManager.getShimmerVersion(mBluetoothAddress)== ShimmerVerDetails.HW_ID.SHIMMER_3){
                                     sensorList.remove("ECG");
                                     sensorList.remove("EMG");
                                     if(sensorList.contains("EXG1")){

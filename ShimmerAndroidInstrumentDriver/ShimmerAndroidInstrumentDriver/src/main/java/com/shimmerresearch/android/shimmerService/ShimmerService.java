@@ -118,6 +118,13 @@ public class ShimmerService extends Service {
 	private String mECGtoHRSignalName = Configuration.Shimmer3.ObjectClusterSensorName.ECG_LA_RA_24BIT;
 	public PlotManagerAndroid mPlotManager;
 
+	/**
+	 * Null while Bluetooth was off when the service was created (onCreate logs "Bluetooth not
+	 * Enabled"), until ensureBluetoothManager() creates it. With no BluetoothManager there are no
+	 * devices, so every method that uses it first returns what the BluetoothManager returns for a
+	 * device it does not know: commands do nothing, and queries return -1, 0, false, "", null,
+	 * DISCONNECTED or an empty list, as that method would.
+	 */
 	protected ShimmerBluetoothManagerAndroid btManager;
 
 	/**	For logging to file	*/
@@ -321,6 +328,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void toggleAllLEDS(){
+		if (btManager == null) return;
 		btManager.toggleAllLEDS();
 	}
 
@@ -331,12 +339,14 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void toggleLED(String bluetoothAddress) {
+		if (btManager == null) return;
 		btManager.toggleLED(bluetoothAddress);
 	}
 
 
 	//TODO: Remove This when done testing
 	public void clickToggle() {
+		if (btManager == null) return;
 		btManager.toggleAllLEDS();
 	}
 
@@ -540,7 +550,7 @@ public class ShimmerService extends Service {
 			}
 			switch (state) {
 				case CONNECTED:
-					ShimmerDevice shimmerDevice = btManager.getShimmerDeviceBtConnectedFromMac(macAddress);
+					ShimmerDevice shimmerDevice = btManager == null ? null : btManager.getShimmerDeviceBtConnectedFromMac(macAddress);
 					mMultiShimmer.remove(macAddress);
 					if (mMultiShimmer.get(macAddress)==null) { mMultiShimmer.put(macAddress,shimmerDevice); }
 					intent.putExtra("ShimmerBluetoothAddress", macAddress);
@@ -567,7 +577,7 @@ public class ShimmerService extends Service {
 					sendBroadcast(intent);
 					break;
 				case SDLOGGING:
-					shimmerDevice = btManager.getShimmerDeviceBtConnectedFromMac(macAddress);
+					shimmerDevice = btManager == null ? null : btManager.getShimmerDeviceBtConnectedFromMac(macAddress);
 					mMultiShimmer.remove(macAddress);
 					if (mMultiShimmer.get(macAddress)==null) { mMultiShimmer.put(macAddress,shimmerDevice); }
 					intent.putExtra("ShimmerBluetoothAddress", macAddress );
@@ -576,7 +586,9 @@ public class ShimmerService extends Service {
 					sendBroadcast(intent);
 					break;
 				case DISCONNECTED:
-					btManager.removeShimmerDeviceBtConnected(macAddress);
+					if (btManager != null) {
+						btManager.removeShimmerDeviceBtConnected(macAddress);
+					}
 					intent.putExtra("ShimmerBluetoothAddress", macAddress );
 					intent.putExtra("ShimmerDeviceName", shimmerName );
 					intent.putExtra("ShimmerState",BT_STATE.DISCONNECTED);
@@ -598,10 +610,12 @@ public class ShimmerService extends Service {
 	}
 
     public void stopStreamingAllDevices() {
+		if (btManager == null) return;
 		btManager.stopStreamingAllDevices();
 	}
 
 	public void startStreamingAllDevices() {
+		if (btManager == null) return;
 		btManager.startStreamingAllDevices();
 	}
 
@@ -690,6 +704,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void setAllAccelRange(int accelRange) {
+		if (btManager == null) return;
 		//TODO: Test this.
 		btManager.setAllAccelRange(accelRange);
 	}
@@ -700,6 +715,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void setAllGSRRange(int gsrRange) {
+		if (btManager == null) return;
 		// TODO: Test this.
 		btManager.setAllGSRRange(gsrRange);
 	}
@@ -710,6 +726,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void setAllEnabledSensors(int enabledSensors) {
+		if (btManager == null) return;
 		//TODO: Test this.
 		btManager.setAllEnabledSensors(enabledSensors);
 	}
@@ -745,6 +762,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void writePMux(String bluetoothAddress,int setBit) {
+		if (btManager == null) return;
 		btManager.writePMux(bluetoothAddress, setBit);
 	}
 
@@ -755,6 +773,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void write5VReg(String bluetoothAddress,int setBit) {
+		if (btManager == null) return;
 		btManager.write5VReg(bluetoothAddress, setBit);
 	}
 
@@ -766,6 +785,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public List<String[]> getListofEnabledSensorSignals(String bluetoothAddress) {
+		if (btManager == null) return new ArrayList<String[]>();
 		List<String[]> listofSensors = new ArrayList<String[]>();
 		listofSensors = btManager.getListofEnabledSensorSignals(bluetoothAddress);
 		return listofSensors;
@@ -778,6 +798,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public long getEnabledSensors(String bluetoothAddress) {
+		if (btManager == null) return 0;
 		long enabledSensors = btManager.getEnabledSensors(bluetoothAddress);
 		return enabledSensors;
 	}
@@ -829,6 +850,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void writeAccelRange(String bluetoothAddress,int accelRange) {
+		if (btManager == null) return;
 		btManager.writeAccelRange(bluetoothAddress, accelRange);
 	}
 
@@ -839,6 +861,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void writeGyroRange(String bluetoothAddress,int range) {
+		if (btManager == null) return;
 		btManager.writeGyroRange(bluetoothAddress, range);
 	}
 
@@ -849,6 +872,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void writePressureResolution(String bluetoothAddress,int resolution) {
+		if (btManager == null) return;
 		btManager.writePressureResolution(bluetoothAddress, resolution);
 	}
 
@@ -859,6 +883,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void writeMagRange(String bluetoothAddress,int range) {
+		if (btManager == null) return;
 		btManager.writeMagRange(bluetoothAddress, range);
 	}
 
@@ -869,6 +894,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void writeGSRRange(String bluetoothAddress,int gsrRange) {
+		if (btManager == null) return;
 		btManager.writeGSRRange(bluetoothAddress, gsrRange);
 	}
 
@@ -879,6 +905,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public double getSamplingRate(String bluetoothAddress) {
+		if (btManager == null) return -1;
 		double SRate = -1;
 		SRate = btManager.getSamplingRate(bluetoothAddress);
 		return SRate;
@@ -891,6 +918,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public int getAccelRange(String bluetoothAddress) {
+		if (btManager == null) return -1;
 		return btManager.getAccelRange(bluetoothAddress);
 	}
 
@@ -901,6 +929,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public BT_STATE getShimmerState(String bluetoothAddress){
+		if (btManager == null) return BT_STATE.DISCONNECTED;
 		BT_STATE status=BT_STATE.DISCONNECTED;
 		status = btManager.getShimmerState(bluetoothAddress);
 		return status;
@@ -913,6 +942,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public int getGSRRange(String bluetoothAddress) {
+		if (btManager == null) return -1;
 		return btManager.getGSRRange(bluetoothAddress);
 	}
 
@@ -923,6 +953,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public int get5VReg(String bluetoothAddress) {
+		if (btManager == null) return -1;
 		int fiveVReg=-1;
 		fiveVReg = btManager.get5VReg(bluetoothAddress);
 		return fiveVReg;
@@ -935,6 +966,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public boolean isLowPowerMagEnabled(String bluetoothAddress) {
+		if (btManager == null) return false;
 		boolean enabled=false;
 		enabled = btManager.isLowPowerMagEnabled(bluetoothAddress);
 		return enabled;
@@ -947,6 +979,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public int getpmux(String bluetoothAddress) {
+		if (btManager == null) return -1;
 		int pmux=-1;
 		pmux = btManager.getpmux(bluetoothAddress);
 		return pmux;
@@ -980,6 +1013,7 @@ public class ShimmerService extends Service {
 */
 
 	public void startStreaming(String bluetoothAddress) throws Exception{
+		if (btManager == null) return;
 			btManager.startStreaming(bluetoothAddress);
 	}
 
@@ -989,6 +1023,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void startLogging(String bluetoothAddress) {
+		if (btManager == null) return;
 		btManager.startLogging(bluetoothAddress);
 	}
 
@@ -998,14 +1033,17 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void stopLogging(String bluetoothAddress) {
+		if (btManager == null) return;
 		btManager.stopLogging(bluetoothAddress);
 	}
 
 	public void startLogAndStreaming(String bluetoothAddress) {
+		if (btManager == null) return;
 		btManager.startLoggingAndStreaming(bluetoothAddress);
 	}
 
 	public void stopLogAndStreaming(String bluetoothAddress) {
+		if (btManager == null) return;
 		btManager.stopLoggingAndStreaming(bluetoothAddress);
 	}
 
@@ -1018,6 +1056,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public long sensorConflictCheckandCorrection(String bluetoothAddress, long enabledSensors, int sensorToCheck) {
+		if (btManager == null) return 0;
 		long newSensorBitmap = 0;
 		newSensorBitmap = btManager.sensorConflictCheckandCorrection(bluetoothAddress, enabledSensors, sensorToCheck);
 		return newSensorBitmap;
@@ -1030,6 +1069,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public List<String> getListofEnabledSensors(String bluetoothAddress) {
+		if (btManager == null) return null;
 		List<String> listofSensors = null;
 		listofSensors = btManager.getListofEnabledSensors(bluetoothAddress);
 		return listofSensors;
@@ -1043,6 +1083,8 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public boolean bluetoothAddressComparator(String bluetoothAddress, String address){
+		// A comparison of two addresses with the colons removed, which needs no device.
+		if (btManager == null) return bluetoothAddress.replace(":","").equals(address.replace(":",""));
 		return btManager.bluetoothAddressComparator(bluetoothAddress, address);
 	}
 
@@ -1072,6 +1114,7 @@ public class ShimmerService extends Service {
 */
 
 	public void stopStreaming(String bluetoothAddress) throws Exception{
+		if (btManager == null) return;
 			btManager.stopStreaming(bluetoothAddress);
 	}
 
@@ -1081,6 +1124,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void setBlinkLEDCMD(String bluetoothAddress) {
+		if (btManager == null) return;
 		btManager.setBlinkLEDCMD(bluetoothAddress);
 	}
 
@@ -1091,6 +1135,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void enableLowPowerMag(String bluetoothAddress,boolean enable) {
+		if (btManager == null) return;
 		btManager.enableLowPowerMag(bluetoothAddress, enable);
 	}
 
@@ -1101,6 +1146,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void setBattLimitWarning(String bluetoothAddress, double limit) {
+		if (btManager == null) return;
 		btManager.setBattLimitWarning(bluetoothAddress, limit);
 	}
 
@@ -1111,6 +1157,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public double getBattLimitWarning(String bluetoothAddress) {
+		if (btManager == null) return -1;
 		return btManager.getBattLimitWarning(bluetoothAddress);
 	}
 
@@ -1121,6 +1168,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public double getPacketReceptionRate(String bluetoothAddress) {
+		if (btManager == null) return -1;
 		double rate = btManager.getPacketReceptionRate(bluetoothAddress);
 		return rate;
 	}
@@ -1163,6 +1211,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public boolean DevicesConnected(String bluetoothAddress){
+		if (btManager == null) return false;
 		return btManager.DevicesConnected(bluetoothAddress);
 	}
 
@@ -1173,6 +1222,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public boolean DeviceIsLogging(String bluetoothAddress){
+		if (btManager == null) return false;
 		return btManager.DeviceIsLogging(bluetoothAddress);
 	}
 
@@ -1183,6 +1233,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public boolean DeviceIsStreaming(String bluetoothAddress){
+		if (btManager == null) return false;
 		return btManager.DeviceIsStreaming(bluetoothAddress);
 	}
 
@@ -1211,6 +1262,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public String getFWVersion (String bluetoothAddress){
+		if (btManager == null) return "";
 		return btManager.getFWVersion(bluetoothAddress);
 	}
 
@@ -1221,6 +1273,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public int getShimmerVersion (String bluetoothAddress){
+		if (btManager == null) return 0;
 		return btManager.getShimmerVersion(bluetoothAddress);
 	}
 
@@ -1276,6 +1329,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void writeEXGSetting(String bluetoothAddress,int setting) {
+		if (btManager == null) return;
 		btManager.writeEXGSetting(bluetoothAddress, setting);
 	}
 
@@ -1297,6 +1351,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public boolean isUsingLogAndStreamFW(String bluetoothAddress){
+		if (btManager == null) return false;
 		return btManager.isUsingLogAndStreamFW(bluetoothAddress);
 	}
 
@@ -1306,6 +1361,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public void readStatusLogAndStream(String bluetoothAddress){
+		if (btManager == null) return;
 		btManager.readStatusLogAndStream(bluetoothAddress);
 	}
 
@@ -1316,6 +1372,7 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public boolean isSensing(String bluetoothAddress){
+		if (btManager == null) return false;
 		return btManager.isSensing(bluetoothAddress);
 	}
 
@@ -1326,9 +1383,14 @@ public class ShimmerService extends Service {
 	 */
 	@Deprecated
 	public boolean isDocked(String bluetoothAddress){
+		if (btManager == null) return false;
 		return btManager.isDocked(bluetoothAddress);
 	}
 
+	/**
+	 * @return the BluetoothManager, or null if Bluetooth was off when the service was created and it
+	 * has not been switched on since (see ensureBluetoothManager()). Callers must check for null.
+	 */
 	public ShimmerBluetoothManagerAndroid getBluetoothManager() {
 		return btManager;
 	}
@@ -1339,10 +1401,12 @@ public class ShimmerService extends Service {
 	}
 
 	public void configureShimmer(ShimmerDevice device) {
+		if (btManager == null) return;
 		btManager.configureShimmer(device);
 	}
 
 	public void configureShimmers(List<ShimmerDevice> listOfShimmers) {
+		if (btManager == null) return;
 		btManager.configureShimmers(listOfShimmers);
 	}
 
