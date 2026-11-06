@@ -18,11 +18,14 @@
 #   build    reads the version; fails if it is already tagged, if versionCode did not go up since the
 #            last ShimmerCapture release, or if the app is not set to PUBLIC; lists the PRs since
 #            that release in the run summary, to write whats_new from; builds the signed release
-#            APK. Read-only (no keystore without it): it also runs, unsigned, on PRs.
+#            APK, shrunk and obfuscated by R8, and keeps R8's mapping.txt as its own artifact.
+#            Read-only (no keystore without it): it also runs, unsigned, on PRs.
 #   release  tags ShimmerCapture_v<version> on the commit it built and creates the GitHub
 #            pre-release with the APK and notes since the previous ShimmerCapture release.
 #            Pre-release, so the Android API release stays "Latest", as before.
-#   play     google_play only: uploads the same APK to Play's Production track as a draft.
+#   play     google_play only: uploads the same APK to Play's Production track as a draft, with
+#            mapping.txt so Play's crash reports show the real class and method names. The
+#            mapping is never attached to the public GitHub release.
 #
 # If a later job fails, "Re-run failed jobs" re-runs just that job.
 #
@@ -327,6 +330,14 @@ jobs:
         path: release-assets/
         if-no-files-found: error
 
+    # R8's map from obfuscated names back to the code, for Play's crash reports. Its own artifact,
+    # so the release job, which publishes everything in shimmercapture-apk, never makes it public.
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: shimmercapture-mapping
+        path: ShimmerAndroidInstrumentDriver/shimmerServiceExample/build/outputs/mapping/release/mapping.txt
+        if-no-files-found: error
+
   release:
     needs: build
     if: github.event_name == 'workflow_dispatch' && !inputs.dry_run
@@ -383,6 +394,11 @@ jobs:
         name: shimmercapture-apk
         path: release-assets
 
+    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      with:
+        name: shimmercapture-mapping
+        path: release-mapping
+
     - name: Write the release notes
       working-directory: .
       env:
@@ -408,6 +424,7 @@ jobs:
         serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
         packageName: com.shimmersensing.shimmerconnect
         releaseFiles: release-assets/${{ needs.build.outputs.apk }}
+        mappingFile: release-mapping/mapping.txt
         releaseName: ${{ needs.build.outputs.version }}
         track: production
         status: draft

@@ -17,8 +17,10 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // R8 shrinks, optimises and obfuscates the release build. Google Play flags apps
+            // without it (DEV-1426). What must not be touched is kept in proguard-rules.pro.
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     configurations.all {

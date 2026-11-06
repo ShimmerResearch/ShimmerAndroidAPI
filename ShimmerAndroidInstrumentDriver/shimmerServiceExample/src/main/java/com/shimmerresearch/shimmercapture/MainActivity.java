@@ -8,10 +8,13 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Looper;
 import android.os.Message;
 
+import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
@@ -19,7 +22,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentManager;
 
@@ -194,7 +196,10 @@ public class MainActivity extends AppCompatActivity implements ConnectedShimmers
             startServiceandBTManager();
         }
 
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        // Edge to edge, as Android 15+ enforces for apps targeting it, the way Google Play
+        // recommends (DEV-1426). Status bar icons stay light: the toolbar behind them is dark in
+        // both light and dark mode. The insets listeners below keep content clear of the bars.
+        EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT));
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);

@@ -43,7 +43,8 @@ release anything else.
 Then, as before the workflow existed:
 
 1. Sync Gradle in Android Studio, **Clean Project**, run the app on a device and check that it
-   connects, configures, streams and plots.
+   connects, configures, streams and plots. That is the debug build, which R8 does not touch:
+   the release build must be checked too, from a dry run (step 2, and *R8* below).
 2. Commit (`ShimmerCapture 1.3.4 (versionCode 35)`), push, and open a PR into `master`.
 3. Wait for CI ("Build and test") to pass, get it reviewed, and merge.
 
@@ -73,7 +74,9 @@ A dry run does everything up to the signed APK and stops. Open the run to check:
   it. Do not choose any option on *Protected with Play* → *Manage Play app signing* as part of a
   release: enrolling cannot be undone.
 - The APK itself is on the run page under **Artifacts** (`shimmercapture-apk`), to install on a test
-  device.
+  device. It is the release build, shrunk and obfuscated by R8 exactly as it will ship, so this is
+  the APK to test on hardware before a release (see *R8* below). Uninstall the Play version first:
+  a debug or Play install of the app is signed differently and blocks installing it over the top.
 
 A dry run can be started from any branch, so it is also the way to try an uprev before merging it.
 
@@ -149,6 +152,36 @@ Not uploading through the workflow? Download the APK from the GitHub release, an
 - Move the ticket on in Jira.
 - If the release changes what the app does, update this module's [README](README.md).
 
+## R8: shrinking and obfuscation
+
+The release build runs R8 (`minifyEnabled true`), which Google Play expects: without it Play Console
+flags *DEX code optimisation is below our threshold*. R8 removes code it thinks is unused and renames
+the rest. The rules in [`proguard-rules.pro`](proguard-rules.pro) say what it must leave alone, each
+with its reason:
+
+- **All Shimmer code** (`com.shimmerresearch.**`: the driver, this library, the app and the
+  biophysical processing jar) is kept as it is, because it uses Java serialization and reflection
+  that R8 cannot see. Only the third-party libraries are shrunk and obfuscated; they are about 80%
+  of the app's classes, well past Play's 25%.
+- **androidplot** and **AndroidBluetoothLibrary**, which work by reflection.
+- **Two AppCompat names** `MainActivity` reaches by name to align the toolbar.
+- `-dontwarn` for classes the driver refers to but the app never had (protobuf, Netty, JNA,
+  desktop UI): R8 only reports them.
+
+What R8 breaks, it breaks **at runtime, not at build time**: a class or field found by name is
+missing, and the app crashes (`ClassNotFoundException`, `NoSuchFieldException`) or, worse, quietly
+behaves differently. The debug build is never shrunk, so it cannot show this. Before each release,
+install the dry run's APK and check on hardware what the app does: connect, configure, stream and
+plot, SD logging, CSV, and the Verisense functions, on a Shimmer3, a Shimmer3R and a Verisense over
+Bluetooth Classic and BLE.
+
+When something new is reached by reflection or serialization, add a `-keep` rule for it with a
+comment saying why. When a crash report from Play shows obfuscated names, it was uploaded without a
+mapping: the play job uploads R8's `mapping.txt` with each release (it is kept as the
+`shimmercapture-mapping` artifact, never on the public GitHub release). For a release built by hand,
+upload `shimmerServiceExample/build/outputs/mapping/release/mapping.txt` in Play Console → *App
+bundle explorer* → the version → *Downloads* → *ReTrace mapping file*.
+
 ## When a run fails
 
 **Re-run failed jobs** on the run page re-runs only what failed, so a GitHub release that was
@@ -163,6 +196,8 @@ already created is not created twice.
 | `No SHIMMERCAPTURE_KEYSTORE_BASE64 secret` | The signing secrets are missing. See *Secrets* below |
 | `The APK is not signed with the ShimmerCapture release key` | The keystore secret holds a different key from the one Play knows. Nothing was published. Replace `SHIMMERCAPTURE_KEYSTORE_BASE64` (and its passwords and alias) with the original keystore, see *Secrets* below |
 | `The APK does not carry versionName …` | The build didn't pick up `build.gradle`'s values. Check for a version override in Gradle files |
+| `Missing classes detected while running R8` | A dependency now refers to a class the app doesn't have. If the code that refers to it can't run in ShimmerCapture, add a `-dontwarn` for it to `proguard-rules.pro`, with the reason, as for protobuf and Netty. If it can run, the class is needed: add the dependency |
+| The released app crashes, or misbehaves, where the debug build doesn't | R8 removed or renamed something found by name. Find it from the crash report (Play maps the names back) and add a `-keep` rule |
 | **play**: `No GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret` | The Play secret is missing. The GitHub release is done; upload by hand (step 4), or add the secret and re-run the job |
 | **play**: `The caller does not have permission` | The service account lacks access to ShimmerCapture in Play Console, or was just added: new permissions can take a day. Re-run the play job later |
 | **play**: `APK specifies a version code that has already been used` | That `versionCode` reached Play before, e.g. by hand. Uprev again |
@@ -202,4 +237,4 @@ Get-Content -Raw <key.json> | gh secret set GOOGLE_PLAY_SERVICE_ACCOUNT_JSON --r
 If the workflow is unavailable, Android Studio still does the same job: **Build** → **Generate
 Signed App Bundle / APK** → **APK** → module `shimmerServiceExample`, the upload keystore, build
 variant **release**. The APK lands in `shimmerServiceExample/release/`. Do the uprev (step 1) first
-all the same, then upload as in step 4.
+all the same, then upload as in step 4, with R8's `mapping.txt` (see *R8* above).

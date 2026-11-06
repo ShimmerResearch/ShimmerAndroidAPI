@@ -138,6 +138,10 @@ Android API workflow; it dry-runs on any PR that changes it. `release-shimmercap
 same for the ShimmerCapture app (`shimmerServiceExample`): a signed APK, a GitHub pre-release and a
 draft Google Play release. Its version comes from that module's `build.gradle`, so each release
 starts with an uprev PR; `shimmerServiceExample/RELEASING.md` is the step-by-step guide.
+ShimmerCapture's release build runs R8 (DEV-1426): all `com.shimmerresearch` code is kept as it
+is, because it relies on serialization and reflection, and only the third-party libraries are
+shrunk and obfuscated. Anything new found by name needs a rule in its `proguard-rules.pro`, and the
+debug build, which R8 never touches, does not show what it breaks.
 
 ## Modules
 
