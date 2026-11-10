@@ -857,6 +857,47 @@ public class Shimmer extends ShimmerBluetooth{
 			 */
 
 		}
+		//Data packet followed by a NACK: a command refused while streaming, e.g. a SET
+		//blocked because the device is sensing, or a log start it cannot carry out
+		//(DEV-1431). Ported from the driver's processPacket(): this parser had no NACK
+		//branch, so the NACK was thrown away with the packet before it, and the ACK
+		//timer then took START_LOGGING_ONLY_COMMAND for started.
+		else if(bufferTemp[0]==DATA_PACKET
+				&& bufferTemp[getPacketSizeWithCrc()+1]==NACK_COMMAND_PROCESSED){
+
+			//With a link CRC on, the NACK is followed by its own CRC, as a bare ACK
+			//is, rather than by the next packet
+			if(!isBareNackCrcSoFar(allBytes)){
+				printLogDataForDebugging("0xFE after a data packet is not a NACK: its CRC does not match");
+				discardFirstBufferByte(); //throw the first byte away
+				return;
+			}
+			int bareNackEnd = getPacketSizeWithCrc()+2+mBtCommsCrcModeCurrent.getNumCrcBytes();
+			if(allBytes.length<bareNackEnd){
+				return; //wait for the rest of the NACK's CRC
+			}
+
+			//Firstly handle the data packet. If its CRC fails, only the packet is
+			//dropped: the NACK's own CRC has already checked out.
+			if(mBtCommsCrcModeCurrent==BT_CRC_MODE.OFF || checkCrc(bufferTemp, getPacketSize()+1)){
+				processDataPacket(bufferTemp);
+			}
+			else {
+				printLogDataForDebugging("CRC error in the data packet before a NACK, packet discarded");
+			}
+			clearSingleDataPacketFromBuffers(bufferTemp, bareNackEnd); //clear the packet, the NACK and its CRC
+
+			//Then fail the command in flight, as the driver does: the refused
+			//instruction is retired, and a refused log start leaves the device not
+			//logging (eventLogStartRefused). With no command in flight a NACK has
+			//nothing to refuse.
+			if(mWaitForAck){
+				processNackFromCommand();
+			}
+			else {
+				printLogDataForDebugging("NACK received while streaming with no command awaiting a reply - ignored");
+			}
+		}
 		//TODO: ACK in bufferTemp[0] not handled
 		//else if
 		else {
@@ -881,6 +922,28 @@ public class Shimmer extends ShimmerBluetooth{
 		}
 		for(int i=0;i<numCrcBytesReceived;i++){
 			if(allBytes[crcStart+i]!=BARE_ACK_CRC[i]){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** The same for a NACK, the refusal of a command: the CRC of 0xFE is C5 56. */
+	private static final byte[] BARE_NACK_CRC = ShimmerCrc.shimmerUartCrcCalc(new byte[] {NACK_COMMAND_PROCESSED}, 1);
+
+	/**
+	 * Whether the bytes received so far after the NACK that follows a data packet
+	 * agree with the CRC on a bare NACK, none of it having arrived counting as
+	 * agreeing. With no link CRC there is nothing to check: a data packet can
+	 * only be followed by another packet's 0x00, an ACK or a NACK.
+	 *
+	 * @param allBytes the contents of mByteArrayOutputStream
+	 */
+	private boolean isBareNackCrcSoFar(byte[] allBytes) {
+		int crcStart = getPacketSizeWithCrc()+2;
+		int numCrcBytesReceived = Math.min(allBytes.length-crcStart, mBtCommsCrcModeCurrent.getNumCrcBytes());
+		for(int i=0;i<numCrcBytesReceived;i++){
+			if(allBytes[crcStart+i]!=BARE_NACK_CRC[i]){
 				return false;
 			}
 		}
